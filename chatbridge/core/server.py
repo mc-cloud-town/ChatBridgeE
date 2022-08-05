@@ -1,9 +1,9 @@
 import socket
 import asyncio
 import struct
-from typing import Optional, Union
+from typing import Union
 
-from chatbridge.utils.base import Address, AESCryptor
+from chatbridge.utils.chat_bridge import BaseChatBridge
 
 
 MAX_CONNECTIONS = 5
@@ -18,14 +18,7 @@ class ChatBridgeServerClient:
     ...
 
 
-class ChatBridgeServer:
-    def __init__(self, aes_key: str, server_address: Address):
-        super().__init__()
-        self.aes_key = aes_key
-        self.server_address = server_address
-        self.cryptor = AESCryptor(aes_key)
-        self.loop: Optional[asyncio.AbstractEventLoop] = asyncio.get_event_loop()
-
+class ChatBridgeServer(BaseChatBridge):
     async def send(self, client: socket.socket, data: Union[bytes, str]):
         if type(data) is not bytes:
             data = data.encode()
@@ -58,7 +51,7 @@ class ChatBridgeServer:
 
     async def run_server(self):
         loop = self.loop
-        server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        server = self._sock
         self.server = server
 
         server.bind(self.server_address)
