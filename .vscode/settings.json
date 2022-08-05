@@ -16,5 +16,8 @@
   "editor.formatOnSave": true,
   "python.analysis.diagnosticSeverityOverrides": {
     "reportMissingModuleSource": "none"
-  }
+  },
+  "cSpell.words": [
+    "REUSEADDR"
+  ]
 }

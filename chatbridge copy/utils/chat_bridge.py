@@ -2,16 +2,13 @@ import json
 import socket
 import struct
 import asyncio
-from typing import Any, Union
+from typing import Any, Union, Literal
 
+from chatbridge.errors.http import EmptyContent
 from chatbridge.utils.base import Address, AESCryptor
 
 
 RECEIVE_BUFFER_SIZE = 1024
-
-
-class EmptyContent(socket.error):
-    pass
 
 
 class BaseChatBridge:
@@ -32,8 +29,14 @@ class BaseChatBridge:
         encrypt = self.cryptor.encrypt(data)
         await self.loop.sock_sendall(client, struct.pack("I", len(encrypt)) + encrypt)
 
-    async def receive_data(self, client: socket.socket) -> str:
+    async def receive_data(
+        self,
+        client: socket.socket,
+    ) -> Union[str, Literal[False], dict, list]:
         request = await self.loop.sock_recv(client, 4)
+
+        if request == b"":
+            return False
 
         if len(request) < 4:
             raise EmptyContent("Error content received")
@@ -49,4 +52,11 @@ class BaseChatBridge:
             encrypted_data += buf
             remaining_data_length -= len(buf)
 
-        return self.cryptor.decrypt(encrypted_data)
+        data = self.cryptor.decrypt(encrypted_data)
+
+        try:
+            return json.loads(data)
+        except:
+            ...
+
+        return data
