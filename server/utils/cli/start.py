@@ -2,7 +2,7 @@ import click
 
 
 @click.command()
-@click.argument('type', default='base')
+@click.argument("type", default="base")
 def main(type):
     print(type)
 

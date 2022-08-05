@@ -2,8 +2,8 @@ import json
 import socket
 from typing import Any, Dict, List, Union
 
-from chatbridge.errors.http import EmptyContent
-from chatbridge.utils.chat_bridge import BaseChatBridge
+from server.errors.http import EmptyContent
+from server.utils.chat_bridge import BaseChatBridge
 
 
 MAX_CONNECTIONS = 5

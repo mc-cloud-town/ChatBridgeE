@@ -1,7 +1,7 @@
 # import socket
 from enum import Enum, auto
 
-from chatbridge.utils.chat_bridge import BaseChatBridge
+from server.utils.chat_bridge import BaseChatBridge
 
 
 class ClientState(Enum):

@@ -4,8 +4,8 @@ import struct
 import asyncio
 from typing import Any, Union, Literal
 
-from chatbridge.errors.http import EmptyContent
-from chatbridge.utils.base import Address, AESCryptor
+from server.errors.http import EmptyContent
+from server.utils.base import Address, AESCryptor
 
 
 RECEIVE_BUFFER_SIZE = 1024
