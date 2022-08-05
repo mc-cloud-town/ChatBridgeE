@@ -23,16 +23,16 @@ class BaseChatBridge:
         self.loop = asyncio.get_event_loop()
         self._sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-    async def send_json(self, client: socket.socket, data: Any):
+    async def send_json(self, client: socket.socket, data: Any) -> None:
         await self.send(client, json.dumps(data, ensure_ascii=False))
 
-    async def send(self, client: socket.socket, data: Union[bytes, str]):
+    async def send(self, client: socket.socket, data: Union[bytes, str]) -> None:
         if type(data) is not bytes:
             data = data.encode()
         encrypt = self.cryptor.encrypt(data)
         await self.loop.sock_sendall(client, struct.pack("I", len(encrypt)) + encrypt)
 
-    async def receive_data(self, client: socket.socket):
+    async def receive_data(self, client: socket.socket) -> str:
         request = await self.loop.sock_recv(client, 4)
 
         if len(request) < 4:
