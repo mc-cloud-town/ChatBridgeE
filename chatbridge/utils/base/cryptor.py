@@ -7,6 +7,8 @@ from binascii import b2a_hex, a2b_hex
 
 from Crypto.Cipher import AES
 
+__all__ = ["AESCryptor"]
+
 
 class AESCryptor:
     def __init__(self, key: str, mode=AES.MODE_CBC):
@@ -35,13 +37,3 @@ class AESCryptor:
         return (
             self.get_cryptor().decrypt(a2b_hex(byte_data)).decode("utf-8").rstrip("\0")
         )
-
-
-if __name__ == "__main__":
-    aes = AESCryptor("test_pwd")
-    while True:
-        t = input()
-        x = aes.encrypt(t)
-        print("Encoded:", x)
-        y = aes.decrypt(x)
-        print("{} -> {} -> {}".format(t, x, y))

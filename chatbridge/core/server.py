@@ -1,33 +1,60 @@
 import socket
 import asyncio
+import struct
+from typing import Optional, Union
 
-# from typing import Dict
-from chatbridge.utils.base import Address
-from chatbridge.utils.chat_bridge import BaseChatBridge
+from chatbridge.utils.base import Address, AESCryptor
 
 
 MAX_CONNECTIONS = 5
+RECEIVE_BUFFER_SIZE = 1024
+
+
+class EmptyContent(socket.error):
+    pass
 
 
 class ChatBridgeServerClient:
     ...
 
 
-class ChatBridgeServer(BaseChatBridge):
+class ChatBridgeServer:
     def __init__(self, aes_key: str, server_address: Address):
         super().__init__()
         self.aes_key = aes_key
         self.server_address = server_address
-        self.loop = asyncio.get_event_loop()
+        self.cryptor = AESCryptor(aes_key)
+        self.loop: Optional[asyncio.AbstractEventLoop] = asyncio.get_event_loop()
 
-    # async def handle_client(self, client):
-    #     loop = self.loop
-    #     request = None
-    #     while request != "quit":
-    #         request = (await loop.sock_recv(client, 255)).decode("utf8")
-    #         print(request)
-    #         await loop.sock_sendall(client, response.encode("utf8"))
-    #     client.close()
+    async def send(self, client: socket.socket, data: Union[bytes, str]):
+        if type(data) is not bytes:
+            data = data.encode()
+        await self.loop.sock_sendall(client, data)
+
+    async def handle_client(self, client: socket.socket):
+        loop = asyncio.get_event_loop()
+        request = None
+        while request != "quit":
+            request = await loop.sock_recv(client, 4)
+
+            if len(request) < 4:
+                print("訊息格式錯誤")
+                continue
+
+            remaining_data_length = struct.unpack("I", request)[0]
+            encrypted_data = bytes()
+
+            while remaining_data_length > 0:
+                buf = await loop.sock_recv(
+                    client,
+                    min(remaining_data_length, RECEIVE_BUFFER_SIZE),
+                )
+                encrypted_data += buf
+                remaining_data_length -= len(buf)
+
+            await self.send(client, encrypted_data)
+
+        client.close()
 
     async def run_server(self):
         loop = self.loop
@@ -36,52 +63,23 @@ class ChatBridgeServer(BaseChatBridge):
 
         server.bind(self.server_address)
         server.listen(MAX_CONNECTIONS)
+        server.settimeout(5)
         server.setblocking(False)
 
         while True:
-            client, _ = await loop.sock_accept(server)
+            try:
+                client, _ = await loop.sock_accept(server)
+            except socket.timeout:
+                continue
             loop.create_task(self.handle_client(client))
 
     def start(self):
         try:
+            self.loop = asyncio.get_event_loop()
             self.loop.run_until_complete(self.run_server())
         except KeyboardInterrupt:
             self.server.close()
 
-    def _loop(self):
-        sock = self._sock
-        sock.bind(self.server_address)
-        sock.settimeout(3)
-        sock.listen(MAX_CONNECTIONS)
-
-        while True:
-            try:
-                client, addr = sock.accept()
-            except socket.timeout:
-                continue
-
-
-# def handle_client(client):
-#     request = None
-#     while request != "quit":
-#         request = client.recv(255).decode("utf8")
-#         response = cmd.run(request)
-#         client.send(response.encode("utf8"))
-#     client.close()
-
-
-# def run_server(server):
-#     client, _ = server.accept()
-#     handle_client(client)
-
-
-# server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-# server.bind(("localhost", 15555))
-# server.listen(8)
-
-# loop = asyncio.get_event_loop()
-# asyncio.async(run_server(server))
-# try:
-#     loop.run_forever()
-# except KeyboardInterrupt:
-#     server.close()
+    def stop(self):
+        self.server.close()
+        self.loop.close()

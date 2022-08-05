@@ -1,4 +1,5 @@
 from typing import NamedTuple
+from .cryptor import *
 
 
 class Address(NamedTuple):
