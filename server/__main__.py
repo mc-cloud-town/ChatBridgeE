@@ -2,6 +2,6 @@
 
 if __name__ == "__main__":
     # main()
-    from chatbridge.core import ChatBridgeServer, Address
+    from server.core import ChatBridgeServer, Address
 
     ChatBridgeServer("test", Address("localhost", 9999)).start()
