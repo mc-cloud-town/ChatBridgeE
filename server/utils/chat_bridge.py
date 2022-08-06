@@ -24,8 +24,8 @@ class BaseChatBridge:
         await self.send(client, json.dumps(data, ensure_ascii=False))
 
     async def send(self, client: socket.socket, data: Union[bytes, str]) -> None:
-        if type(data) is not bytes:
-            data = data.encode()
+        if type(data) is not str:
+            data = data.decode("utf-8")
         encrypt = self.cryptor.encrypt(data)
         await self.loop.sock_sendall(client, struct.pack("I", len(encrypt)) + encrypt)
 

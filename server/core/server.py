@@ -37,19 +37,25 @@ class ChatBridgeServer(BaseChatBridge):
     ):
         for client in self.clients:
             if client in exclude:
-                self.loop.sock_sendall(client, data)
+                await self.send(client, data)
 
     async def handle_client(self, client: socket.socket):
         while True:
             try:
                 data = await self.receive_data(client)
+            except UnicodeDecodeError:
+                print("加密密鑰錯誤")
+                continue
             except EmptyContent:
                 continue
+            except ConnectionResetError:
+                print("連線中斷")
+                break
 
             if not data:
                 break
-
             print(data)
+            await self.send(client, "pong")
 
         client.close()
 
@@ -62,6 +68,7 @@ class ChatBridgeServer(BaseChatBridge):
         server.listen(MAX_CONNECTIONS)
         server.settimeout(5)
         server.setblocking(False)
+        print("server listening")
 
         while True:
             try:
