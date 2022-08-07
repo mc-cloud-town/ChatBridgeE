@@ -51,17 +51,14 @@ class ChatBridgeClient(BaseChatBridge):
         async def runner():
             await self.start()
 
-        def stop_loop_on_completion(_):
-            loop.stop()
-
         future = asyncio.ensure_future(runner(), loop=loop)
-        future.add_done_callback(stop_loop_on_completion)
+        future.add_done_callback(self.close)
         try:
             loop.run_forever()
         except KeyboardInterrupt:
             pass
         finally:
-            future.remove_done_callback(stop_loop_on_completion)
+            future.remove_done_callback(self.close)
 
     async def _login(self):
         await self.send_json(self._sock, {"name": "", "password": ""})
@@ -83,6 +80,8 @@ class ChatBridgeClient(BaseChatBridge):
                 self.close()
                 break
 
+            await self.send(self._sock, "pong")
+
             if type(data) != dict:
                 continue
 
@@ -91,8 +90,6 @@ class ChatBridgeClient(BaseChatBridge):
 
             if self.state != ClientState.ONLINE and ev == "login_success":
                 self.set_state(ClientState.ONLINE)
-            elif ev == "ping":
-                await self.send(self._sock, "pong")
             elif ev == "message":
                 # from_event = da.get("d")
                 ...
@@ -103,22 +100,3 @@ class ChatBridgeClient(BaseChatBridge):
     def close(self):
         self._sock.close()
         self.set_state(ClientState.DISCONNECTED)
-
-
-# s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-# s.connect((HOST, PORT))
-
-# while True:
-#     outdata = input("please input message: ")
-#     print("send: " + outdata)
-#     outdata = struct.pack("I", len(outdata)) + outdata.encode()
-#     print("outdata:", outdata)
-#     s.send(outdata)
-
-#     indata = s.recv(1024)
-#     print(indata)
-#     if len(indata) == 0:  # connection closed
-#         s.close()
-#         print("server closed connection.")
-#         break
-#     print("recv: " + indata.decode())

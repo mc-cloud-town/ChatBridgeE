@@ -36,7 +36,7 @@ class ChatBridgeServer(BaseChatBridge):
         exclude: List[socket.socket] = [],
     ):
         for client in self.clients:
-            if client in exclude:
+            if client not in exclude:
                 await self.send(client, data)
 
     async def handle_client(self, client: socket.socket):
@@ -73,7 +73,6 @@ class ChatBridgeServer(BaseChatBridge):
         while True:
             try:
                 client, _ = await loop.sock_accept(server)
-                print(_)
             except socket.timeout:
                 continue
             loop.create_task(self.handle_client(client))
