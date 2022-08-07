@@ -12,22 +12,15 @@ class ChatBridgeClient(BaseChatBridge, BaseState):
     def _connect(self):
         self._sock.connect(self.server_address)
 
-    async def start(self):
-        async def login():
-            while self.state not in [ClientState.STOPPED, ClientState.ONLINE]:
-                await self._login()
-                break
-
-        self._connect()
-        self.loop.create_task(login())
-        await self.get_requests()
+    async def start():
+        ...
 
     def run(self):
         loop = self.loop
 
         try:
-            loop.add_signal_handler(signal.SIGINT, loop.stop)
-            loop.add_signal_handler(signal.SIGTERM, loop.stop)
+            loop.add_signal_handler(signal.SIGINT, self.close)
+            loop.add_signal_handler(signal.SIGTERM, self.close)
         except (NotImplementedError, RuntimeError):
             pass
 
@@ -44,15 +37,11 @@ class ChatBridgeClient(BaseChatBridge, BaseState):
         finally:
             future.remove_done_callback(close)
 
-    async def _login(self):
-        await self.send_json(self._sock, {"name": "", "password": ""})
-
     async def get_requests(self):
         self.set_state(ClientState.CONNECTING)
 
         while True:
             try:
-                print("data")
                 data = await self.receive_data(self._sock)
             except UnicodeDecodeError:
                 print("加密密鑰錯誤")
@@ -82,4 +71,5 @@ class ChatBridgeClient(BaseChatBridge, BaseState):
 
     def close(self):
         self._sock.close()
+        self.loop.stop()
         self.set_state(ClientState.DISCONNECTED)

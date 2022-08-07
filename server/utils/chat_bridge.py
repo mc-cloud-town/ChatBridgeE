@@ -80,3 +80,18 @@ class BaseState:
 
     def set_state(self, state: ClientState) -> None:
         self.__state = state
+
+    def _in_status(self, *states: ClientState) -> bool:
+        return self.__state in states
+
+    def _is_connecting(self) -> bool:
+        return self._in_status(ClientState.CONNECTING)
+
+    def _is_online(self) -> bool:
+        return self._in_status(ClientState.ONLINE)
+
+    def _is_disconnected(self) -> bool:
+        return self._in_status(ClientState.DISCONNECTED)
+
+    def _is_stopped(self) -> bool:
+        return self._in_status(ClientState.STOPPED)
