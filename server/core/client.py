@@ -31,17 +31,18 @@ class ChatBridgeClient(BaseChatBridge, BaseState):
         except (NotImplementedError, RuntimeError):
             pass
 
-        async def runner():
-            await self.start()
+        def close(_):
+            self.close()
 
-        future = asyncio.ensure_future(runner(), loop=loop)
-        future.add_done_callback(lambda _: self.close())
+        future = asyncio.ensure_future(self.start(), loop=loop)
+        future.add_done_callback(close)
+
         try:
             loop.run_forever()
         except KeyboardInterrupt:
             pass
         finally:
-            future.remove_done_callback(lambda: self.close())
+            future.remove_done_callback(close)
 
     async def _login(self):
         await self.send_json(self._sock, {"name": "", "password": ""})
