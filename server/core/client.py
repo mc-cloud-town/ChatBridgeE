@@ -1,29 +1,13 @@
 # import socket
 import asyncio
-from enum import Enum, auto
 import signal
 
-from server.utils.chat_bridge import BaseChatBridge
+from server.utils.chat_bridge import BaseChatBridge, BaseState, ClientState
 
 
-class ClientState(Enum):
-    CONNECTING = auto()
-    ONLINE = auto()
-    DISCONNECTED = auto()
-    STOPPED = auto()
-
-
-class ChatBridgeClient(BaseChatBridge):
+class ChatBridgeClient(BaseChatBridge, BaseState):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.__state = ClientState.STOPPED
-
-    @property
-    def state(self) -> ClientState:
-        return self.__state
-
-    def set_state(self, state: ClientState) -> None:
-        self.__state = state
 
     def _connect(self):
         self._sock.connect(self.server_address)
@@ -39,7 +23,6 @@ class ChatBridgeClient(BaseChatBridge):
         await self.get_requests()
 
     def run(self):
-
         loop = self.loop
 
         try:
@@ -52,13 +35,13 @@ class ChatBridgeClient(BaseChatBridge):
             await self.start()
 
         future = asyncio.ensure_future(runner(), loop=loop)
-        future.add_done_callback(self.close)
+        future.add_done_callback(lambda _: self.close())
         try:
             loop.run_forever()
         except KeyboardInterrupt:
             pass
         finally:
-            future.remove_done_callback(self.close)
+            future.remove_done_callback(lambda: self.close())
 
     async def _login(self):
         await self.send_json(self._sock, {"name": "", "password": ""})
@@ -68,9 +51,8 @@ class ChatBridgeClient(BaseChatBridge):
 
         while True:
             try:
-                print("a")
+                print("data")
                 data = await self.receive_data(self._sock)
-                print("b")
             except UnicodeDecodeError:
                 print("加密密鑰錯誤")
                 continue

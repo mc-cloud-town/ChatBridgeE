@@ -1,3 +1,4 @@
+from enum import Enum, auto
 import json
 import socket
 import struct
@@ -60,3 +61,22 @@ class BaseChatBridge:
             ...
 
         return data
+
+
+class ClientState(Enum):
+    CONNECTING = auto()
+    ONLINE = auto()
+    DISCONNECTED = auto()
+    STOPPED = auto()
+
+
+class BaseState:
+    def __init__(self):
+        self.__state = ClientState.STOPPED
+
+    @property
+    def state(self) -> ClientState:
+        return self.__state
+
+    def set_state(self, state: ClientState) -> None:
+        self.__state = state

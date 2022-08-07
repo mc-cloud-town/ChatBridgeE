@@ -1,17 +1,68 @@
 import json
 import socket
+import asyncio
 from typing import Any, Dict, List, Union
 
 from server.errors.http import EmptyContent
-from server.utils.chat_bridge import BaseChatBridge
+from server.utils.chat_bridge import BaseChatBridge, ClientState, BaseState
 
 
 MAX_CONNECTIONS = 5
 RECEIVE_BUFFER_SIZE = 1024
 
 
-class ChatBridgeServerClient:
-    ...
+class ChatBridgeClient(BaseState):
+    def __init__(self, server: "ChatBridgeServer"):
+        super().__init__()
+
+        self.server = server
+        self.send = server.send
+        self.receive_data = server.receive_data
+        self.loop = server.loop
+        self.name = None
+
+    async def check_online_close(self):
+        async def is_online():
+            while self.state != ClientState.ONLINE:
+                await asyncio.sleep(1)
+
+        try:
+            await asyncio.wait_for(is_online(), timeout=10.0)
+        except asyncio.TimeoutError:
+            print("登入超時")
+            self.close()
+
+    async def handle_client(self, client: socket.socket):
+        while True:
+            try:
+                data = await self.receive_data(client)
+            except UnicodeDecodeError:
+                print("加密密鑰錯誤")
+                continue
+            except EmptyContent:
+                continue
+            except (ConnectionResetError, ConnectionAbortedError):
+                print(f"{self.name} 連線中斷")
+                break
+
+            if not data:
+                break
+
+            print(data)
+
+            try:
+                await self.send(client, "pong")
+            except OSError:
+                break
+        self.close()
+
+    def close(self):
+        self.client.close()
+
+    async def __call__(self, client: socket.socket):
+        self.client = client
+        self.loop.create_task(self.check_online_close())
+        await self.handle_client(client)
 
 
 class ChatBridgeServer(BaseChatBridge):
@@ -39,26 +90,6 @@ class ChatBridgeServer(BaseChatBridge):
             if client not in exclude:
                 await self.send(client, data)
 
-    async def handle_client(self, client: socket.socket):
-        while True:
-            try:
-                data = await self.receive_data(client)
-            except UnicodeDecodeError:
-                print("加密密鑰錯誤")
-                continue
-            except EmptyContent:
-                continue
-            except ConnectionResetError:
-                print("連線中斷")
-                break
-
-            if not data:
-                break
-            print(data)
-            await self.send(client, "pong")
-
-        client.close()
-
     async def run_server(self):
         loop = self.loop
         server = self._sock
@@ -75,7 +106,7 @@ class ChatBridgeServer(BaseChatBridge):
                 client, _ = await loop.sock_accept(server)
             except socket.timeout:
                 continue
-            loop.create_task(self.handle_client(client))
+            loop.create_task(ChatBridgeClient(self)(client))
 
     def start(self):
         try:
