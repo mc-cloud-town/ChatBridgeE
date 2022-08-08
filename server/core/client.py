@@ -1,6 +1,7 @@
 # import socket
 import asyncio
 import signal
+from typing import Type, TypeVar
 
 from server.utils.chat_bridge import BaseChatBridge, BaseState, ClientState
 
@@ -11,6 +12,13 @@ class ChatBridgeClient(BaseChatBridge, BaseState):
 
     def _connect(self):
         self._sock.connect(self.server_address)
+
+    async def login(self):
+        await self.send_json({"name": "", "password": ""})
+        data = await self.receive_data()
+
+    async def _connect_and_login(self):
+        self._connect()
 
     async def start(self):
         ...
@@ -73,3 +81,8 @@ class ChatBridgeClient(BaseChatBridge, BaseState):
         self._sock.close()
         self.loop.stop()
         self.set_state(ClientState.DISCONNECTED)
+
+    T = TypeVar("T")
+
+    async def receive_data(self, receive_type: Type[T]) -> T:
+        return super().receive_data(self._sock)
