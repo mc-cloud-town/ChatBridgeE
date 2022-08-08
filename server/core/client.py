@@ -12,7 +12,7 @@ class ChatBridgeClient(BaseChatBridge, BaseState):
     def _connect(self):
         self._sock.connect(self.server_address)
 
-    async def start():
+    async def start(self):
         ...
 
     def run(self):
