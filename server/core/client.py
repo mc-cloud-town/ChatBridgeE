@@ -17,6 +17,10 @@ class ChatBridgeClient(BaseChatBridge, BaseState):
         await self.send_json({"name": "", "password": ""})
         data = await self.receive_data()
 
+        # TODO login check
+        if data[""] == "":
+            self.set_state(ClientState.ONLINE)
+
     async def _connect_and_login(self):
         self._connect()
 
