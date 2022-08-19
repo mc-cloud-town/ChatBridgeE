@@ -1,3 +1,2 @@
 mcdreforged>=2.2.0
-pycryptodome
-colorlog
+python-socketio

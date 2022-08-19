@@ -1,20 +1,28 @@
-import click
+from aiohttp import web
+import socketio
 
-from server.core import ChatBridgeServer, Address
+sio = socketio.AsyncServer()
+app = web.Application()
 
-address = Address("localhost", 9999)
+sio.attach(app)
 
 
-@click.command()
-@click.option("--discord", default=False, is_flag=True)
-def main(discord):
-    if discord:
-        from server.core import ChatBridgeClient
+@sio.event
+async def connect(sid: str, environ):
+    print(environ)
+    # username = authenticate_user(environ)
+    # with sio.session(sid) as session:
+    #     session["username"] = username
 
-        ChatBridgeClient("test", address).run()
-        return
-    ChatBridgeServer("test", address).start()
 
+# @sio.event
+# async def message(sid, data):
+#     with sio.session(sid) as session:
+#         print("message from ", session["username"])
+
+
+# def authenticate_user():
+#     ...
 
 if __name__ == "__main__":
-    main()
+    web.run_app(app, port=6000)
