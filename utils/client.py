@@ -3,7 +3,7 @@ import signal
 from typing import Callable, ParamSpec, TypeVar
 import socketio
 
-from utils.async_ import CallableAsync
+from utils.utils import CallableAsync
 
 __all__ = ("BaseClient",)
 
@@ -13,7 +13,6 @@ P = ParamSpec("P")
 
 
 def _cancel_tasks(loop: asyncio.AbstractEventLoop) -> None:
-
     if not (tasks := {t for t in asyncio.all_tasks(loop=loop) if not t.done()}):
         return
 
@@ -55,6 +54,7 @@ class BaseClient:
 
         return wrapper
 
+    # sio methods
     @property
     def emit(self):
         return self._to_sync(self.sio.emit)
@@ -71,16 +71,18 @@ class BaseClient:
     def disconnect(self):
         return self._to_sync(self.sio.disconnect)
 
+    @property
+    def on(self):
+        return self.sio.on
+
+    # end sio methods
+
     async def runner(self) -> None:
         await self.sio.connect(
             "http://localhost:6000",
             {"username": "user", "password": "password_"},
         )
         await self.sio.wait()
-
-    @property
-    def on(self):
-        return self.sio.on
 
     def start(self):
         loop = self.loop
