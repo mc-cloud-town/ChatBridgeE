@@ -1,10 +1,11 @@
 from pathlib import Path
 
-import socketio
 from mcdreforged.api.all import PluginServerInterface, Info, new_thread
 
+from utils.client import BaseClient
 
-sio = socketio.Client()
+
+sio = BaseClient()
 
 
 def on_load(server: PluginServerInterface, old_module):
@@ -41,24 +42,12 @@ def on_server_stop(server: PluginServerInterface, return_code: int):
 
 def on_player_joined(server: PluginServerInterface, player_name: str, info: Info):
     """玩家加入"""
-    sio.emit(
-        "player_joined",
-    )
+    sio.emit("player_joined")
 
 
 def on_player_left(server: PluginServerInterface, player_name: str):
     """玩家離開"""
     sio.emit("player_left", player_name)
-
-
-@sio.event
-async def connect():
-    print("連線完成")
-
-
-@sio.event
-async def disconnect():
-    print("與伺服器斷開連線")
 
 
 @new_thread

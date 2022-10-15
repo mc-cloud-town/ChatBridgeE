@@ -9,16 +9,21 @@ sio.attach(app)
 
 @sio.event
 async def connect(sid: str, environ):
-    print(environ)
+    # print(environ)
+    ...
     # username = authenticate_user(environ)
     # with sio.session(sid) as session:
     #     session["username"] = username
 
 
-# @sio.event
-# async def message(sid, data):
-#     with sio.session(sid) as session:
-#         print("message from ", session["username"])
+@sio.event
+async def message(sid, data):
+    print("message from ", sid, data)
+
+
+@sio.event
+async def test(sid, data):
+    print(sid, data)
 
 
 # def authenticate_user():
