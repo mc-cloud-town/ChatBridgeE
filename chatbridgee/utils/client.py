@@ -1,9 +1,11 @@
 import asyncio
 import signal
-from typing import Callable, ParamSpec, TypeVar
+from typing import Callable, Iterable, ParamSpec, TypeVar, Union
 import socketio
 
-from utils.utils import CallableAsync
+from chatbridgee.core.structure import PayloadSender, PayloadStructure
+
+from .utils import CallableAsync
 
 __all__ = ("BaseClient",)
 
@@ -37,7 +39,9 @@ def _cancel_tasks(loop: asyncio.AbstractEventLoop) -> None:
 class BaseClient:
     sio = socketio.AsyncClient()
 
-    def __init__(self):
+    def __init__(self, name: str):
+        self.__name = name
+
         self.loop = asyncio.get_event_loop()
 
         @self.sio.event
@@ -48,11 +52,32 @@ class BaseClient:
         async def disconnect():
             print("disconnected from server")
 
+    def get_name(self) -> str:
+        return self.__name
+
     def _to_sync(self, func: Callable[P, R]):
         def wrapper(*args: P.args, **kwargs: P.kwargs):
             return CallableAsync(func, loop=self.loop)(*args, **kwargs)
 
         return wrapper
+
+    def send_to(
+        self,
+        type_: str,
+        clients: Union[str, Iterable[str]],
+        structure: PayloadSender,
+    ) -> None:
+        self.call(
+            type_,
+            PayloadStructure(
+                data=structure,
+                sender=self.get_name(),
+                receivers=(clients,) if type(clients) == str else clients,
+            ),
+        )
+
+    def send_to_all(self, type_: str, structure: PayloadSender) -> None:
+        self.send_to(type_, [], structure)
 
     # sio methods
     @property

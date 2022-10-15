@@ -2,7 +2,7 @@ from pathlib import Path
 
 from mcdreforged.api.all import PluginServerInterface, Info, new_thread
 
-from utils.client import BaseClient
+from chatbridgee.utils.client import BaseClient
 
 
 sio = BaseClient()
@@ -27,27 +27,27 @@ def on_info(server: PluginServerInterface, info: Info):
 
 def on_server_start(server: PluginServerInterface):
     """伺服器啟動"""
-    sio.emit("server_start")
+    sio.call("server_start")
 
 
 def on_server_startup(server: PluginServerInterface):
     """伺服器啟動完成"""
-    sio.emit("server_startup")
+    sio.call("server_startup")
 
 
 def on_server_stop(server: PluginServerInterface, return_code: int):
     """伺服器關閉"""
-    sio.emit("server_stop")
+    sio.call("server_stop")
 
 
 def on_player_joined(server: PluginServerInterface, player_name: str, info: Info):
     """玩家加入"""
-    sio.emit("player_joined")
+    sio.call("player_joined")
 
 
 def on_player_left(server: PluginServerInterface, player_name: str):
     """玩家離開"""
-    sio.emit("player_left", player_name)
+    sio.call("player_left", player_name)
 
 
 @new_thread
