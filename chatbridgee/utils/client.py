@@ -1,11 +1,20 @@
 import asyncio
 import signal
-from typing import Callable, Iterable, ParamSpec, TypeVar, Union
+from typing import (
+    Callable,
+    Generic,
+    Iterable,
+    Optional,
+    ParamSpec,
+    TypeVar,
+    Union,
+    overload,
+)
 import socketio
 
 from chatbridgee.core.structure import PayloadSender, PayloadStructure
 
-from .utils import CallableAsync
+from .utils import MISSING, CallableAsync
 
 __all__ = ("BaseClient",)
 
@@ -134,3 +143,36 @@ class BaseClient:
             _cancel_tasks(self.loop)
             loop.run_until_complete(loop.shutdown_asyncgens())
             loop.close()
+
+
+R = TypeVar("R")
+P = ParamSpec("P")
+
+
+class EventHandler(Generic[P, R]):
+    def __init__(self, func: Callable[P, R], event_name: Optional[str] = None):
+        self.__func = func
+        self.event_name = func.__name__ if event_name is None else event_name
+
+    def __call__(self, *args: P.args, **kwargs: P.kwargs) -> R:
+        return self.__func(*args, **kwargs)
+
+
+# fmt: off
+@overload  # noqa: E302
+def event(arg: str) -> Callable[[Callable[P, R]], EventHandler[P, R]]: ...  # noqa: E704
+@overload  # noqa: E302
+def event(arg: Callable[P, R]) -> EventHandler[P, R]: ...  # noqa: E704
+# fmt: on
+
+
+def event(arg: Union[str, Callable[P, R]] = MISSING):
+    if type(arg) == str:
+
+        def decorator(func: Callable[P, R]):
+            func.__name__ = arg
+            return event(func)
+
+        return decorator
+
+    return EventHandler(arg, arg.__name__)
