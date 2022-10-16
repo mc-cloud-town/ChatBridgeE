@@ -31,7 +31,7 @@ class EventHandler(Generic[P, R]):
         self.event_name = func.__name__ if event_name is None else event_name
 
     def __call__(self, *args: P.args, **kwargs: P.kwargs) -> R:
-        return self.__func(*args, **kwargs)
+        return CallableAsync(self.__func)(*args, **kwargs)
 
     def _set_cls(self, cls):
         self.cls = cls
@@ -99,7 +99,8 @@ class Events(metaclass=EventsMate):
             if isinstance(func, EventHandler) and func.cls:
                 args = (func.cls, *args)
 
-            CallableAsync(func, loop=self.loop)(*args, **kwargs)
+            CallableAsync(func, loop=self.loop).sync(*args)
+            # (*args, **kwargs)
 
     def add_listener(self, func: Callable, name: str = MISSING):
         name = func.__name__ if name is MISSING else name

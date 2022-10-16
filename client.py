@@ -1,3 +1,4 @@
+import asyncio
 from chatbridgee.utils.client import event, BaseClient
 
 
@@ -6,7 +7,8 @@ class Test(BaseClient):
         super().__init__("test")
 
     @event("connect")
-    def on_connect(self):
+    async def on_connect(self):
+        await asyncio.sleep(1)
         print("connect")
 
     @event("message")

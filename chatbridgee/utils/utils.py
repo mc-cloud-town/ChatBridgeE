@@ -1,5 +1,5 @@
 import json
-from typing import Any, Callable, Generic, Optional, TypeVar, ParamSpec, Union
+from typing import Any, Callable, Generic, Optional, TypeVar, ParamSpec
 
 import asyncio
 
@@ -43,11 +43,11 @@ class CallableAsync(Generic[R, P]):
 
     def __init__(
         self,
-        func: Union[Callable[P, R], "CallableAsync"],
-        loop: Optional[asyncio.AbstractEventLoop],
+        func: Callable[P, R],
+        loop: Optional[asyncio.AbstractEventLoop] = None,
     ) -> None:
         self.loop = asyncio.get_event_loop() if loop is None else loop
-        self._func = func._func if isinstance(func, CallableAsync) else func
+        self._func = func
 
     def __call__(self, *args: P.args, **kwargs: P.kwargs):
         return self.sync(*args, **kwargs)
@@ -62,9 +62,9 @@ class CallableAsync(Generic[R, P]):
         )
 
     async def _run(self, *args: P.args, **kwargs: P.kwargs) -> R:
-        if not asyncio.iscoroutinefunction(self._func):
-            return self._func(*args, **kwargs)
-        return await self._func(*args, **kwargs)
+        if asyncio.iscoroutinefunction(self._func):
+            return await self._func(*args, **kwargs)
+        return self._func(*args, **kwargs)
 
 
 def to_sync(func: Callable = MISSING):
