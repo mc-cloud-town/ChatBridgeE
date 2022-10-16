@@ -1,22 +1,23 @@
 import asyncio
 import signal
 from typing import (
+    Dict,
+    List,
     Callable,
-    Generic,
+    ClassVar,
     Iterable,
-    Optional,
     ParamSpec,
     TypeVar,
     Union,
-    overload,
 )
 import socketio
 
 from chatbridgee.core.structure import PayloadSender, PayloadStructure
+from chatbridgee.utils.events import Events, event
 
-from .utils import MISSING, CallableAsync
+from .utils import CallableAsync
 
-__all__ = ("BaseClient",)
+__all__ = ("BaseClient", "event")
 
 
 R = TypeVar("R")
@@ -45,21 +46,23 @@ def _cancel_tasks(loop: asyncio.AbstractEventLoop) -> None:
             )
 
 
-class BaseClient:
-    sio = socketio.AsyncClient()
+class BaseClient(Events):
+    events: ClassVar[Dict[str, List[Callable]]]
 
     def __init__(self, name: str):
         self.__name = name
 
+        self.sio = socketio.AsyncClient()
         self.loop = asyncio.get_event_loop()
 
-        @self.sio.event
-        async def connect():
-            print("connection established")
+    def handle_events(self):
+        sio = self.sio
 
-        @self.sio.event
-        async def disconnect():
-            print("disconnected from server")
+        for ev_name in (*sio.reserved_events, "*"):
+
+            @sio.on(ev_name)
+            async def call_listeners(*args, **kwargs):
+                self.dispatch(ev_name, *args, **kwargs)
 
     def get_name(self) -> str:
         return self.__name
@@ -105,13 +108,11 @@ class BaseClient:
     def disconnect(self):
         return self._to_sync(self.sio.disconnect)
 
-    @property
-    def on(self):
-        return self.sio.on
-
     # end sio methods
 
     async def runner(self) -> None:
+        self.handle_events()
+
         await self.sio.connect(
             "http://localhost:6000",
             {"username": "user", "password": "password_"},
@@ -143,36 +144,3 @@ class BaseClient:
             _cancel_tasks(self.loop)
             loop.run_until_complete(loop.shutdown_asyncgens())
             loop.close()
-
-
-R = TypeVar("R")
-P = ParamSpec("P")
-
-
-class EventHandler(Generic[P, R]):
-    def __init__(self, func: Callable[P, R], event_name: Optional[str] = None):
-        self.__func = func
-        self.event_name = func.__name__ if event_name is None else event_name
-
-    def __call__(self, *args: P.args, **kwargs: P.kwargs) -> R:
-        return self.__func(*args, **kwargs)
-
-
-# fmt: off
-@overload  # noqa: E302
-def event(arg: str) -> Callable[[Callable[P, R]], EventHandler[P, R]]: ...  # noqa: E704
-@overload  # noqa: E302
-def event(arg: Callable[P, R]) -> EventHandler[P, R]: ...  # noqa: E704
-# fmt: on
-
-
-def event(arg: Union[str, Callable[P, R]] = MISSING):
-    if type(arg) == str:
-
-        def decorator(func: Callable[P, R]):
-            func.__name__ = arg
-            return event(func)
-
-        return decorator
-
-    return EventHandler(arg, arg.__name__)

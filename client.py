@@ -1,8 +1,21 @@
-from chatbridgee.utils.client import event
+from chatbridgee.utils.client import event, BaseClient
 
 
-# client = BaseClient()
+class Test(BaseClient):
+    def __init__(self):
+        super().__init__("test")
 
+    @event("connect")
+    async def on_connect(self, sid: str, environ):
+        print("connect", sid, environ)
+
+    @event("message")
+    async def on_message(self, sid: str, data: dict):
+        print("message", sid, data)
+
+
+client = Test()
+client.start()
 
 # @client.on("connect")
 # def connect():
@@ -11,15 +24,15 @@ from chatbridgee.utils.client import event
 
 # # asyncio.run(client.main)
 # client.start()
-@event
-def test():
-    print("awa")
+# @event
+# def test():
+#     print("awa")
 
 
-@event("awa")
-def test2():
-    print("awa")
+# @event("awa")
+# def test2():
+#     print("awa")
 
 
-test
-test2
+# test
+# test2
