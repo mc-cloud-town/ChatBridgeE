@@ -3,7 +3,7 @@ from typing import Any, Callable, Generic, Optional, TypeVar, ParamSpec
 
 import asyncio
 
-__all__ = ("MISSING", "CallableAsync", "to_sync")
+__all__ = ("MISSING", "ClassJson", "CallableAsync", "to_sync")
 
 
 class _MissingSentinel:
@@ -67,11 +67,11 @@ class CallableAsync(Generic[R, P]):
         return self._func(*args, **kwargs)
 
 
-def to_sync(func: Callable = MISSING):
+def to_sync(func: Optional[Callable] = None):
     if isinstance(func, CallableAsync):
         raise TypeError("Callback is already a CallableAsync.")
 
-    if func is MISSING:
+    if func is None:
         return to_sync
 
     return CallableAsync(func)
