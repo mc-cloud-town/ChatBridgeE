@@ -55,14 +55,26 @@ class BaseClient(Events):
         self.sio = socketio.AsyncClient()
         self.loop = asyncio.get_event_loop()
 
+        super().__init__(self.loop)
+
     def handle_events(self):
         sio = self.sio
 
-        for ev_name in (*sio.reserved_events, "*"):
+        @sio.on("*")
+        async def call_listeners(ev_name: str, *args, **kwargs):
+            self.dispatch(ev_name, *args, **kwargs)
 
-            @sio.on(ev_name)
-            async def call_listeners(*args, **kwargs):
-                self.dispatch(ev_name, *args, **kwargs)
+        @sio.on("connect")
+        async def on_connect(*args, **kwargs):
+            await call_listeners("connect", *args, **kwargs)
+
+        @sio.on("connect_error")
+        async def on_connect_error(*args, **kwargs):
+            await call_listeners("connect_error", *args, **kwargs)
+
+        @sio.on("disconnect")
+        async def on_disconnect(*args, **kwargs):
+            await call_listeners("disconnect", *args, **kwargs)
 
     def get_name(self) -> str:
         return self.__name

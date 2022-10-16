@@ -6,8 +6,8 @@ class Test(BaseClient):
         super().__init__("test")
 
     @event("connect")
-    async def on_connect(self, sid: str, environ):
-        print("connect", sid, environ)
+    def on_connect(self):
+        print("connect")
 
     @event("message")
     async def on_message(self, sid: str, data: dict):
