@@ -51,13 +51,14 @@ class BaseClient(Events):
 
     def __init__(self, name: str):
         self.__name = name
+        self._closed: bool = False
 
         self.sio = socketio.AsyncClient()
         self.loop = asyncio.get_event_loop()
 
         super().__init__(self.loop)
 
-    def handle_events(self):
+    def handle_events(self) -> None:
         sio = self.sio
 
         @sio.on("*")
@@ -122,6 +123,9 @@ class BaseClient(Events):
 
     # end sio methods
 
+    def is_closed(self) -> bool:
+        return self._closed
+
     async def runner(self) -> None:
         self.handle_events()
 
@@ -131,7 +135,7 @@ class BaseClient(Events):
         )
         await self.sio.wait()
 
-    def start(self):
+    def start(self) -> None:
         loop = self.loop
 
         try:
@@ -156,3 +160,10 @@ class BaseClient(Events):
             _cancel_tasks(self.loop)
             loop.run_until_complete(loop.shutdown_asyncgens())
             loop.close()
+
+    def stop(self) -> None:
+        if self._closed:
+            return
+
+        self._closed = True
+        self.disconnect()

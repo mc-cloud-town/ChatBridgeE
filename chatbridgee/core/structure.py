@@ -1,13 +1,17 @@
 from typing import List, TypedDict
 
-from chatbridgee.utils.utils import ClassJson
-
 
 class PayloadStructure(TypedDict):
     sender: str
-    data: dict
+    data: "PayloadSender"
     receivers: List[str]
 
 
-class PayloadSender(ClassJson):
-    pass
+class PayloadSender(TypedDict):
+    ...
+
+
+class ChatEventStructure(PayloadSender):
+    time: str
+    player: str
+    content: str

@@ -23,7 +23,7 @@ async def message(sid, data):
     print("message from ", sid, data)
 
 
-@sio_server.event
+@sio_server.on("*")
 async def test(sid, data):
     print(sid, data)
 
