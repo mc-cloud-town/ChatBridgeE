@@ -46,6 +46,7 @@ def on_server_stop(server: PluginServerInterface, return_code: int):
     """伺服器關閉"""
     sio.call("server_stop")
 
+
 # def on_mcdr_start():
 #     ...
 # def on_mcdr_stop():
@@ -53,6 +54,7 @@ def on_server_stop(server: PluginServerInterface, return_code: int):
 
 
 def on_info(server: PluginServerInterface, info: Info):
+    print(info)
     if info.is_user:  # on_user_info
         if info.is_from_server:
             # on_chat
@@ -73,7 +75,7 @@ def on_info(server: PluginServerInterface, info: Info):
 
 def on_player_joined(server: PluginServerInterface, player_name: str, info: Info):
     """玩家加入"""
-    sio.call("player_joined")
+    sio.call("player_joined", {"player_name": player_name})
 
 
 def on_player_left(server: PluginServerInterface, player_name: str):
