@@ -1,3 +1,4 @@
+import asyncio
 from pathlib import Path
 
 from mcdreforged.api.all import PluginServerInterface, Info, new_thread
@@ -19,17 +20,23 @@ from chatbridgee.utils.client import BaseClient
 # on_player_joined
 # on_player_left
 
-sio = BaseClient()
+loop = asyncio.new_event_loop()
+asyncio.set_event_loop(loop)
+
+sio = BaseClient("test")
 
 
 def on_load(server: PluginServerInterface, old_module):
+    print("start")
+    main()
     config_path = Path(server.get_data_folder()) / "config.json"
     if not config_path.is_file():
         server.save_config_simple({})
 
 
 def on_unload(server: PluginServerInterface):
-    ...
+    sio.stop()
+    print("stop")
 
 
 def on_server_start(server: PluginServerInterface):
@@ -65,11 +72,12 @@ def on_info(server: PluginServerInterface, info: Info):
 
             sio.call(
                 "chat",
-                ChatEventStructure(
-                    time=time_message,
-                    player=info.player,
-                    content=info.content,
-                ),
+                {"awa": "awa"},
+                # ChatEventStructure(
+                #     time=time_message,
+                #     player=info.player,
+                #     content=info.content,
+                # )
             )
 
 
@@ -85,4 +93,5 @@ def on_player_left(server: PluginServerInterface, player_name: str):
 
 @new_thread
 def main():
-    sio.connect("http://localhost:6000", {"username": "user", "password": "password_"})
+    sio.start()
+    # "http://localhost:6000", {"username": "user", "password": "password_"}

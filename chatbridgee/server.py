@@ -10,8 +10,7 @@ sio_server.attach(app)
 
 @sio_server.event
 async def connect(sio: str, environ: Dict):
-    # print(environ)
-    await sio_server.emit("test", {"test": "test"})
+    print(sio)
     ...
     # username = authenticate_user(environ)
     # with sio.session(sid) as session:

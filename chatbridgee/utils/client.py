@@ -6,6 +6,7 @@ from typing import (
     Callable,
     ClassVar,
     Iterable,
+    Optional,
     ParamSpec,
     TypeVar,
     Union,
@@ -49,12 +50,13 @@ def _cancel_tasks(loop: asyncio.AbstractEventLoop) -> None:
 class BaseClient(Events):
     events: ClassVar[Dict[str, List[Callable]]]
 
-    def __init__(self, name: str):
+    def __init__(self, name: str, loop: Optional[asyncio.AbstractEventLoop] = None):
         self.__name = name
         self._closed: bool = False
 
         self.sio = socketio.AsyncClient()
-        self.loop = asyncio.get_event_loop()
+        self.loop = asyncio.get_event_loop() if loop is None else loop
+        self._connected = asyncio.Event()
 
         super().__init__(self.loop)
 
@@ -67,6 +69,8 @@ class BaseClient(Events):
 
         @sio.on("connect")
         async def on_connect(*args, **kwargs):
+            self._connected.set()
+            print("connect")
             await call_listeners("connect", *args, **kwargs)
 
         @sio.on("connect_error")
@@ -104,22 +108,29 @@ class BaseClient(Events):
     def send_to_all(self, type_: str, structure: PayloadSender) -> None:
         self.send_to(type_, [], structure)
 
+    def wait_connect(self, callable_async: Callable[P, R]):
+        async def wait_connect(*args: P.args, **kwargs: P.kwargs):
+            await self._connected.wait()
+            await callable_async(*args, **kwargs)
+
+        return self._to_sync(wait_connect)
+
     # sio methods
     @property
     def emit(self):
-        return self._to_sync(self.sio.emit)
+        return self.wait_connect(self.sio.emit)
 
     @property
     def send(self):
-        return self._to_sync(self.sio.send)
+        return self.wait_connect(self.sio.send)
 
     @property
     def call(self):
-        return self._to_sync(self.sio.call)
+        return self.wait_connect(self.sio.call)
 
     @property
     def disconnect(self):
-        return self._to_sync(self.sio.disconnect)
+        return self.wait_connect(self.sio.disconnect)
 
     # end sio methods
 
