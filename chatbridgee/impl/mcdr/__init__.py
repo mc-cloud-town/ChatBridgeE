@@ -20,8 +20,7 @@ from chatbridgee.utils.client import BaseClient
 # on_player_joined
 # on_player_left
 
-loop = asyncio.new_event_loop()
-asyncio.set_event_loop(loop)
+asyncio.set_event_loop(asyncio.new_event_loop())
 
 sio = BaseClient("test")
 

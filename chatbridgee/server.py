@@ -23,8 +23,8 @@ async def message(sid, data):
 
 
 @sio_server.on("*")
-async def test(sid, data):
-    print(sid, data)
+async def test(*args):
+    print(args)
 
 
 def start():

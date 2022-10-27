@@ -1,3 +1,4 @@
+import time
 from chatbridgee.utils.client import event, BaseClient
 
 
@@ -15,4 +16,7 @@ class Test(BaseClient):
 
 
 client = Test()
+client.call("awa", "awa")
+
+time.sleep(2)
 client.start()

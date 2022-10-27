@@ -1,4 +1,16 @@
-from chatbridgee.core.structure import ChatEventStructure
+import asyncio
+from asyncio import Future
 
-data = ChatEventStructure(time="10:10:10", player="player", content="content")
-print(f"{1:0>2}")
+
+async def main():
+    my_future = Future()
+    print(my_future.done())  # False
+
+    my_future.set_result("Bright")
+
+    print(my_future.done())  # True
+
+    print(my_future.result())
+
+
+asyncio.run(main())
