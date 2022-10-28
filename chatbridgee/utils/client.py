@@ -1,5 +1,6 @@
 import asyncio
 import signal
+from threading import Thread
 from typing import (
     Dict,
     List,
@@ -83,9 +84,12 @@ class BaseClient(Events):
     def get_name(self) -> str:
         return self.__name
 
-    def _to_sync(self, func: Callable[P, R]):
+    def _create_thread(self, func: Callable[P, R]):
         def wrapper(*args: P.args, **kwargs: P.kwargs):
-            return self.loop.create_task(func(*args, **kwargs))
+            t = Thread(target=asyncio.run, args=(func(*args, **kwargs),))
+            t.start()
+
+            return t
 
         return wrapper
 
@@ -124,19 +128,19 @@ class BaseClient(Events):
     # sio methods
     @property
     def emit(self):
-        return self._to_sync(self.wait_connect(self.sio.emit))
+        return self._create_thread(self.wait_connect(self.sio.emit))
 
     @property
     def send(self):
-        return self._to_sync(self.wait_connect(self.sio.send))
+        return self._create_thread(self.wait_connect(self.sio.send))
 
     @property
     def call(self):
-        return self._to_sync(self.wait_connect(self.sio.call))
+        return self._create_thread(self.wait_connect(self.sio.call))
 
     @property
     def disconnect(self):
-        return self._to_sync(self.wait_connect(self.sio.disconnect))
+        return self._create_thread(self.wait_connect(self.sio.disconnect))
 
     # end sio methods
     async def runner(self) -> None:
