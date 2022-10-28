@@ -1,3 +1,5 @@
+import asyncio
+from datetime import datetime
 import time
 from chatbridgee.utils.client import event, BaseClient
 
@@ -9,6 +11,9 @@ class Test(BaseClient):
     @event("connect")
     async def on_connect(self):
         print("connect")
+        while True:
+            await asyncio.sleep(1)
+            self.call("test", datetime.now().strftime("%H:%M:%S"))
 
     @event("message")
     async def on_message(self, sid: str, data: dict):

@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Dict
 from aiohttp import web
 import socketio
@@ -18,13 +19,13 @@ async def connect(sio: str, environ: Dict):
 
 
 @sio_server.event
-async def message(sid, data):
-    print("message from ", sid, data)
+async def disconnect(*args):
+    print("disconnect", args)
 
 
 @sio_server.on("*")
 async def test(*args):
-    print(args)
+    print(datetime.now().strftime("%H:%M:%S"), args)
 
 
 def start():

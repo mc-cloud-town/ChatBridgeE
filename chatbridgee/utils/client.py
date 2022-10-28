@@ -16,8 +16,6 @@ import socketio
 from chatbridgee.core.structure import PayloadSender, PayloadStructure
 from chatbridgee.utils.events import Events, event
 
-from .utils import CallableAsync
-
 __all__ = ("BaseClient", "event")
 
 
@@ -52,7 +50,6 @@ class BaseClient(Events):
 
     def __init__(self, name: str, loop: Optional[asyncio.AbstractEventLoop] = None):
         self.__name = name
-        self._closed: bool = False
 
         self.sio = socketio.AsyncClient()
         self.loop = asyncio.get_event_loop() if loop is None else loop
@@ -69,8 +66,8 @@ class BaseClient(Events):
 
         @sio.on("connect")
         async def on_connect(*args, **kwargs):
-            self._connected.set()
             print("connect")
+            self._connected.set()
             await call_listeners("connect", *args, **kwargs)
 
         @sio.on("connect_error")
@@ -79,6 +76,8 @@ class BaseClient(Events):
 
         @sio.on("disconnect")
         async def on_disconnect(*args, **kwargs):
+            print("disconnect")
+            self._connected.clear()
             await call_listeners("disconnect", *args, **kwargs)
 
     def get_name(self) -> str:
@@ -86,9 +85,16 @@ class BaseClient(Events):
 
     def _to_sync(self, func: Callable[P, R]):
         def wrapper(*args: P.args, **kwargs: P.kwargs):
-            return CallableAsync(func, loop=self.loop)(*args, **kwargs)
+            return self.loop.create_task(func(*args, **kwargs))
 
         return wrapper
+
+    def is_connected(self) -> bool:
+        return self._connected.is_set()
+
+    async def wait_connected(self):
+        if not self.is_connected():
+            await self._connected.wait()
 
     def send_to(
         self,
@@ -110,33 +116,29 @@ class BaseClient(Events):
 
     def wait_connect(self, callable_async: Callable[P, R]):
         async def wait_connect(*args: P.args, **kwargs: P.kwargs):
-            await self._connected.wait()
+            await self.wait_connected()
             await callable_async(*args, **kwargs)
 
-        return self._to_sync(wait_connect)
+        return wait_connect
 
     # sio methods
     @property
     def emit(self):
-        return self.wait_connect(self.sio.emit)
+        return self._to_sync(self.wait_connect(self.sio.emit))
 
     @property
     def send(self):
-        return self.wait_connect(self.sio.send)
+        return self._to_sync(self.wait_connect(self.sio.send))
 
     @property
     def call(self):
-        return self.wait_connect(self.sio.call)
+        return self._to_sync(self.wait_connect(self.sio.call))
 
     @property
     def disconnect(self):
-        return self.wait_connect(self.sio.disconnect)
+        return self._to_sync(self.wait_connect(self.sio.disconnect))
 
     # end sio methods
-
-    def is_closed(self) -> bool:
-        return self._closed
-
     async def runner(self) -> None:
         self.handle_events()
 
@@ -172,9 +174,9 @@ class BaseClient(Events):
             loop.run_until_complete(loop.shutdown_asyncgens())
             loop.close()
 
-    def stop(self) -> None:
-        if self._closed:
+    async def stop(self) -> None:
+        if self.is_connected():
             return
 
-        self._closed = True
-        self.disconnect()
+        await self.sio.disconnect()
+        self._connected.clear()
