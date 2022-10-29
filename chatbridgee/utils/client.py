@@ -86,6 +86,7 @@ class BaseClient(Events):
 
     def _create_thread(self, func: Callable[P, R]):
         def wrapper(*args: P.args, **kwargs: P.kwargs):
+            # todo use Lock
             t = Thread(target=asyncio.run, args=(func(*args, **kwargs),))
             t.start()
 
