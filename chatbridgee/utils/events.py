@@ -1,4 +1,3 @@
-import asyncio
 from typing import (
     Any,
     Dict,
@@ -15,7 +14,7 @@ from typing import (
     overload,
 )
 
-from chatbridgee.utils.utils import MISSING, CallableAsync
+from chatbridgee.utils.utils import MISSING
 
 
 R = TypeVar("R")
@@ -31,7 +30,7 @@ class EventHandler(Generic[P, R]):
         self.event_name = func.__name__ if event_name is None else event_name
 
     def __call__(self, *args: P.args, **kwargs: P.kwargs) -> R:
-        return CallableAsync(self.__func)(*args, **kwargs)
+        return self.__func(*args, **kwargs)
 
     def _set_cls(self, cls):
         self.cls = cls
@@ -86,27 +85,38 @@ class EventsMate(type):
 class Events(metaclass=EventsMate):
     _class_events: ClassVar[List[Tuple[str, EventHandler]]] = {}
 
-    def __init__(self, loop: Optional[asyncio.AbstractEventLoop] = None):
-        self.loop = loop
+    def __init__(self):
         self.extra_events: Dict[str, List[EventHandler]] = {}
 
         for name, method in self._class_events:
             method._set_cls(self)
             self.add_listener(method, name)
 
-    def dispatch(self, event_name: str, *args, **kwargs):
+    def dispatch(self, event_name: str, *args, **kwargs) -> None:
         for func in self.extra_events.get(event_name, []):
             if isinstance(func, EventHandler) and func.cls:
                 args = (func.cls, *args)
 
-            CallableAsync(func, loop=self.loop).sync(*args)
-            # (*args, **kwargs)
+            try:
+                func(*args, **kwargs)
+            except Exception as e:
+                self.dispatch("dispatch_error", func, e)
 
-    def add_listener(self, func: Callable, name: str = MISSING):
+    def add_listener(self, func: Callable, name: str = MISSING) -> None:
         name = func.__name__ if name is MISSING else name
 
         self.extra_events[name] = self.extra_events.get(name, [])
         self.extra_events[name].append(func)
 
-    def listen(self):
-        self
+    def listen(self, arg: Union[str, Callable] = MISSING, *args, **kwargs):
+        name = arg
+
+        def decorator(func: Callable):
+            self.add_listener(func, name, *args, **kwargs)
+            return func
+
+        if callable(arg):
+            name = arg.__name__
+            return decorator(arg)
+
+        return decorator

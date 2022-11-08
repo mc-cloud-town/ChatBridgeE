@@ -1,187 +1,125 @@
-import asyncio
-import signal
-from threading import Thread
-from typing import (
-    Dict,
-    List,
-    Callable,
-    ClassVar,
-    Iterable,
-    Optional,
-    ParamSpec,
-    TypeVar,
-    Union,
-)
+from enum import Enum, auto
+import logging
+from typing import ParamSpec, TypeVar
+from threading import Event, RLock
 import socketio
 
-from chatbridgee.core.structure import PayloadSender, PayloadStructure
 from chatbridgee.utils.events import Events, event
 
 __all__ = ("BaseClient", "event")
 
+log = logging.getLogger("chatbridgee")
 
 R = TypeVar("R")
 P = ParamSpec("P")
 
 
-def _cancel_tasks(loop: asyncio.AbstractEventLoop) -> None:
-    if not (tasks := {t for t in asyncio.all_tasks(loop=loop) if not t.done()}):
-        return
-
-    for task in tasks:
-        task.cancel()
-
-    loop.run_until_complete(asyncio.gather(*tasks, return_exceptions=True))
-
-    for task in tasks:
-        if task.cancelled():
-            continue
-        if task.exception() is not None:
-            loop.call_exception_handler(
-                {
-                    "message": "run shutdown.",
-                    "exception": task.exception(),
-                    "task": task,
-                }
-            )
+class ClientStatus(Enum):
+    CONNECTING = auto()
+    CONNECTED = auto()
+    ONLINE = auto()
+    DISCONNECTED = auto()
+    STOPPED = auto()
 
 
 class BaseClient(Events):
-    events: ClassVar[Dict[str, List[Callable]]]
+    def __init__(self, name: str):
+        super().__init__()
 
-    def __init__(self, name: str, loop: Optional[asyncio.AbstractEventLoop] = None):
         self.__name = name
+        self.log = log
 
-        self.sio = socketio.AsyncClient()
-        self.loop = asyncio.get_event_loop() if loop is None else loop
-        self._connected = asyncio.Event()
+        self.sio = socketio.Client()
+        self.__start_stop_lock = RLock()
+        self.__connection_done = Event()
+        self.status = ClientStatus.STOPPED
 
-        super().__init__(self.loop)
+        self.handle_events()
 
     def handle_events(self) -> None:
         sio = self.sio
 
         @sio.on("*")
-        async def call_listeners(ev_name: str, *args, **kwargs):
+        def call_listeners(ev_name: str, *args, **kwargs):
             self.dispatch(ev_name, *args, **kwargs)
 
         @sio.on("connect")
-        async def on_connect(*args, **kwargs):
+        def on_connect(*args, **kwargs):
+            self._set_status(ClientStatus.CONNECTED)
             print("connect")
-            self._connected.set()
-            await call_listeners("connect", *args, **kwargs)
+            call_listeners("connect", *args, **kwargs)
 
         @sio.on("connect_error")
-        async def on_connect_error(*args, **kwargs):
-            await call_listeners("connect_error", *args, **kwargs)
+        def on_connect_error(*args, **kwargs):
+            self.stop()
+            call_listeners("connect_error", *args, **kwargs)
 
         @sio.on("disconnect")
-        async def on_disconnect(*args, **kwargs):
+        def on_disconnect(*args, **kwargs):
+            self._set_status(ClientStatus.DISCONNECTED)
             print("disconnect")
-            self._connected.clear()
-            await call_listeners("disconnect", *args, **kwargs)
+            call_listeners("disconnect", *args, **kwargs)
+
+    # ----------------
+    # ---- status ----
+    # ----------------
+    def _has_status(self, status: ClientStatus) -> bool:
+        return self.status == status
+
+    def is_online(self) -> bool:
+        return self._has_status(ClientStatus.ONLINE)
+
+    def is_connecting(self) -> bool:
+        return self._has_status(ClientStatus.CONNECTING)
+
+    def is_connected(self) -> bool:
+        return self._has_status(ClientStatus.CONNECTED) or self.is_online()
+
+    def is_disconnected(self) -> bool:
+        return self._has_status(ClientStatus.DISCONNECTED)
+
+    def is_stopped(self) -> bool:
+        return self._has_status(ClientStatus.STOPPED)
+
+    def is_running(self) -> bool:
+        return not self.is_stopped()
+
+    # ----------------
 
     def get_name(self) -> str:
         return self.__name
 
-    def _create_thread(self, func: Callable[P, R]):
-        def wrapper(*args: P.args, **kwargs: P.kwargs):
-            # todo use Lock
-            t = Thread(target=asyncio.run, args=(func(*args, **kwargs),))
-            t.start()
-
-            return t
-
-        return wrapper
-
-    def is_connected(self) -> bool:
-        return self._connected.is_set()
-
-    async def wait_connected(self):
-        if not self.is_connected():
-            await self._connected.wait()
-
-    def send_to(
-        self,
-        type_: str,
-        clients: Union[str, Iterable[str]],
-        structure: PayloadSender,
-    ) -> None:
-        self.call(
-            type_,
-            PayloadStructure(
-                data=structure,
-                sender=self.get_name(),
-                receivers=(clients,) if type(clients) == str else clients,
-            ),
-        )
-
-    def send_to_all(self, type_: str, structure: PayloadSender) -> None:
-        self.send_to(type_, [], structure)
-
-    def wait_connect(self, callable_async: Callable[P, R]):
-        async def wait_connect(*args: P.args, **kwargs: P.kwargs):
-            await self.wait_connected()
-            await callable_async(*args, **kwargs)
-
-        return wait_connect
-
-    # sio methods
-    @property
-    def emit(self):
-        return self._create_thread(self.wait_connect(self.sio.emit))
-
-    @property
-    def send(self):
-        return self._create_thread(self.wait_connect(self.sio.send))
-
-    @property
-    def call(self):
-        return self._create_thread(self.wait_connect(self.sio.call))
-
-    @property
-    def disconnect(self):
-        return self._create_thread(self.wait_connect(self.sio.disconnect))
-
-    # end sio methods
-    async def runner(self) -> None:
-        self.handle_events()
-
-        await self.sio.connect(
-            "http://localhost:6000",
-            {"username": "user", "password": "password_"},
-        )
-        await self.sio.wait()
+    def stop(self) -> None:
+        self.sio.disconnect()
+        with self.__start_stop_lock:
+            if not self.is_running():
+                log.warning("Client is not running, cannot stop")
+                return
+            self.__disconnect()
+        self._set_status(ClientStatus.STOPPED)
+        log.info("Stop client")
 
     def start(self) -> None:
-        loop = self.loop
+        log.info(f"Starting client {self.get_name()}")
 
-        try:
-            loop.add_signal_handler(signal.SIGINT, loop.stop)
-            loop.add_signal_handler(signal.SIGTERM, loop.stop)
-        except (NotImplementedError, RuntimeError):
-            pass
+        with self.__start_stop_lock:
+            if self.is_running():
+                log.warning("Client is running, cannot start again")
+                return
+            self._set_status(ClientStatus.CONNECTING)
 
-        def stop_loop(_):
-            loop.stop()
+        self.__connection_done.clear()
+        self.sio.connect()
+        self.__connection_done.set()
 
-        future = asyncio.ensure_future(self.runner(), loop=loop)
-        future.add_done_callback(stop_loop)
+        log.info(f"Started client {self.get_name()}")
 
-        try:
-            loop.run_forever()
-        except KeyboardInterrupt:
-            pass
-        finally:
-            future.remove_done_callback(stop_loop)
-
-            _cancel_tasks(self.loop)
-            loop.run_until_complete(loop.shutdown_asyncgens())
-            loop.close()
-
-    async def stop(self) -> None:
-        if self.is_connected():
+    def __disconnect(self) -> None:
+        if not self.is_running:
             return
+        self.sio.disconnect()
+        self._set_status(ClientStatus.DISCONNECTED)
 
-        await self.sio.disconnect()
-        self._connected.clear()
+    def _set_status(self, status: ClientStatus) -> None:
+        self.status = status
+        log.debug(f"Client {self.get_name()} change status: {status}")

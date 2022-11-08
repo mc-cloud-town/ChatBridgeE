@@ -1,16 +1,20 @@
-import asyncio
-from asyncio import Future
+from typing import Callable, Union
 
 
-async def main():
-    my_future = Future()
-    print(my_future.done())  # False
+def listen(arg: Union[str, Callable] = None, *args, **kwargs):
+    name = arg
 
-    my_future.set_result("Bright")
+    def decorator(func: Callable):
+        print(func, name or func.__name__, *args, **kwargs)
+        return func
 
-    print(my_future.done())  # True
+    if callable(arg):
+        name = arg.__name__
+        return decorator(arg)
 
-    print(my_future.result())
+    return decorator
 
 
-asyncio.run(main())
+@listen("v")
+def a():
+    ...

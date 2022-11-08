@@ -1,4 +1,3 @@
-import asyncio
 from pathlib import Path
 
 from mcdreforged.api.all import PluginServerInterface, Info, new_thread
@@ -19,8 +18,6 @@ from chatbridgee.utils.client import BaseClient
 # on_user_info
 # on_player_joined
 # on_player_left
-
-asyncio.set_event_loop(asyncio.new_event_loop())
 
 sio = BaseClient("test")
 
