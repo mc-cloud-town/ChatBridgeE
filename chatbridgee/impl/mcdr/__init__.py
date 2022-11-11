@@ -1,8 +1,8 @@
 from pathlib import Path
 
-from mcdreforged.api.all import PluginServerInterface, Info, new_thread
-from chatbridgee.core.structure import ChatEventStructure
+from mcdreforged.api.all import Info, PluginServerInterface, new_thread
 
+from chatbridgee.core.structure import ChatEventStructure
 from chatbridgee.utils.client import BaseClient
 
 # on_load
@@ -62,23 +62,21 @@ def on_server_stop(server: PluginServerInterface, return_code: int):
 
 @new_thread("chatbridgee-info")
 def on_info(server: PluginServerInterface, info: Info):
-    print(info)
-    if info.is_user:  # on_user_info
-        if info.is_from_server:
-            # on_chat
-            try:
-                time_message = f"{info.hour:0>2}:{info.min:0>2}:{info.sec:0>2}"
-            except TypeError:
-                time_message = "Invalid"
+    try:
+        time_message = f"{info.hour:0>2}:{info.min:0>2}:{info.sec:0>2}"
+    except TypeError:
+        time_message = "Invalid"
 
-            sio.call(
-                "chat",
-                ChatEventStructure(
-                    time=time_message,
-                    player=info.player,
-                    content=info.content,
-                ),
-            )
+    if info.is_user and info.is_from_server:
+        # on_chat
+        return sio.call(
+            "chat",
+            ChatEventStructure(
+                time=time_message,
+                player=info.player,
+                content=info.content,
+            ),
+        )
 
 
 @new_thread("chatbridgee-player-joined")
@@ -96,4 +94,5 @@ def on_player_left(server: PluginServerInterface, player_name: str):
 @new_thread
 def main():
     sio.start()
+    sio.wait()
     # "http://localhost:6000", {"username": "user", "password": "password_"}

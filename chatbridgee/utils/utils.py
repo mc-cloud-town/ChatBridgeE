@@ -1,5 +1,5 @@
 import json
-from typing import Any
+from typing import Any, Optional
 
 
 __all__ = ("MISSING", "ClassJson")
@@ -29,5 +29,5 @@ class ClassJson:
     def __str__(self) -> str:
         return self.__repr__()
 
-    def __getitem__(self, key: str):
+    def __getitem__(self, key: str) -> Optional[Any]:
         return self.__kwargs.get(key, None)

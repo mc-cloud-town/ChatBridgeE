@@ -24,7 +24,7 @@ P = ParamSpec("P")
 class EventHandler(Generic[P, R]):
     cls = None
 
-    def __init__(self, func: Callable[P, R], event_name: Optional[str] = None):
+    def __init__(self, func: Callable[P, R], event_name: Optional[str] = None) -> None:
         self.__func = func
         self.__name__ = func.__name__
         self.event_name = func.__name__ if event_name is None else event_name
@@ -32,7 +32,7 @@ class EventHandler(Generic[P, R]):
     def __call__(self, *args: P.args, **kwargs: P.kwargs) -> R:
         return self.__func(*args, **kwargs)
 
-    def _set_cls(self, cls):
+    def _set_cls(self, cls) -> None:
         self.cls = cls
 
 
@@ -85,7 +85,7 @@ class EventsMate(type):
 class Events(metaclass=EventsMate):
     _class_events: ClassVar[List[Tuple[str, EventHandler]]] = {}
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.extra_events: Dict[str, List[EventHandler]] = {}
 
         for name, method in self._class_events:

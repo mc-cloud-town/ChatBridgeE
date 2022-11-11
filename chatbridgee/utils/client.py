@@ -1,7 +1,8 @@
-from enum import Enum, auto
 import logging
-from typing import ParamSpec, TypeVar
+from enum import Enum, auto
 from threading import Event, RLock
+from typing import ParamSpec, TypeVar
+
 import socketio
 
 from chatbridgee.utils.events import Events, event
@@ -33,6 +34,7 @@ class BaseClient(Events):
         self.__start_stop_lock = RLock()
         self.__connection_done = Event()
         self.status = ClientStatus.STOPPED
+        self.server_url = "http://localhost:6000"
 
         self.handle_events()
 
@@ -84,6 +86,10 @@ class BaseClient(Events):
     def is_running(self) -> bool:
         return not self.is_stopped()
 
+    def call(self, *args, **kwargs):
+        # TODO add return
+        return self.sio.call(*args, **kwargs)
+
     # ----------------
 
     def get_name(self) -> str:
@@ -109,7 +115,7 @@ class BaseClient(Events):
             self._set_status(ClientStatus.CONNECTING)
 
         self.__connection_done.clear()
-        self.sio.connect()
+        self.sio.connect(self.server_url)
         self.__connection_done.set()
 
         log.info(f"Started client {self.get_name()}")
@@ -123,3 +129,6 @@ class BaseClient(Events):
     def _set_status(self, status: ClientStatus) -> None:
         self.status = status
         log.debug(f"Client {self.get_name()} change status: {status}")
+
+    def wait(self) -> None:
+        self.sio.wait()
