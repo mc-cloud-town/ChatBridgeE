@@ -2,8 +2,12 @@ from pathlib import Path
 
 from mcdreforged.api.all import Info, PluginServerInterface, new_thread
 
-from chatbridgee.core.structure import ChatEventStructure
-from chatbridgee.utils.client import BaseClient
+from chatbridgee.core.structure import (
+    ChatEventStructure,
+    PlayerJoinedEventStructure,
+    PlayerLeftEventStructure,
+)
+from chatbridgee.core.client import BaseClient
 
 # on_load
 # on_unload
@@ -82,13 +86,13 @@ def on_info(server: PluginServerInterface, info: Info):
 @new_thread("chatbridgee-player-joined")
 def on_player_joined(server: PluginServerInterface, player_name: str, info: Info):
     """玩家加入"""
-    sio.call("player_joined", {"player_name": player_name})
+    sio.call("player_joined", PlayerJoinedEventStructure(player_name=player_name))
 
 
 @new_thread("chatbridgee-player-left")
 def on_player_left(server: PluginServerInterface, player_name: str):
     """玩家離開"""
-    sio.call("player_left", player_name)
+    sio.call("player_left", PlayerLeftEventStructure(player_name=player_name))
 
 
 @new_thread
