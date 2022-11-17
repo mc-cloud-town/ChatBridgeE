@@ -34,7 +34,7 @@ class BaseClient(Events):
         self.__start_stop_lock = RLock()
         self.__connection_done = Event()
         self.status = ClientStatus.STOPPED
-        self.server_url = "http://localhost:6000"
+        self._server_url = "http://localhost:6000"
 
         self.handle_events()
 
@@ -105,6 +105,12 @@ class BaseClient(Events):
         self._set_status(ClientStatus.STOPPED)
         log.info("Stop client")
 
+    def set_url(self, url: str):
+        self._server_url = url
+
+    def get_url(self) -> str:
+        return self._server_url
+
     def start(self) -> None:
         log.info(f"Starting client {self.get_name()}")
 
@@ -115,7 +121,7 @@ class BaseClient(Events):
             self._set_status(ClientStatus.CONNECTING)
 
         self.__connection_done.clear()
-        self.sio.connect(self.server_url)
+        self.sio.connect(self._server_url)
         self.__connection_done.set()
 
         log.info(f"Started client {self.get_name()}")
