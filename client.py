@@ -1,27 +1,24 @@
-import asyncio
-from datetime import datetime
-import time
-from chatbridgee.utils.client import event, BaseClient
+from chatbridgee.core.client import BaseClient, event
+from chatbridgee.core.structure import ChatEventStructure
 
 
 class Test(BaseClient):
+    events_structure = {"test": ChatEventStructure}
+
     def __init__(self):
         super().__init__("test")
 
     @event("connect")
-    async def on_connect(self):
+    def on_connect(self):
         print("connect")
-        while True:
-            await asyncio.sleep(1)
-            self.call("test", datetime.now().strftime("%H:%M:%S"))
+        self.call("test", ChatEventStructure(time="awa", player="awa", content="awa"))
 
     @event("message")
-    async def on_message(self, sid: str, data: dict):
+    def on_message(self, sid: str, data: dict):
         print("message", sid, data)
 
 
 client = Test()
-client.call("awa", "awa")
 
-time.sleep(2)
 client.start()
+client.wait()

@@ -1,11 +1,12 @@
 import logging
 from enum import Enum, auto
 from threading import Event, RLock
-from typing import ParamSpec, TypeVar
+from typing import Any, Dict, List, Optional, ParamSpec, TypeVar, Union
 
 import socketio
 
 from chatbridgee.utils.events import Events, event
+from chatbridgee.core.structure import PayloadSender, PayloadStructure
 
 __all__ = ("BaseClient", "event")
 
@@ -24,6 +25,8 @@ class ClientStatus(Enum):
 
 
 class BaseClient(Events):
+    events_structure: Dict[str, PayloadSender] = {}
+
     def __init__(self, name: str):
         super().__init__()
 
@@ -48,7 +51,6 @@ class BaseClient(Events):
         @sio.on("connect")
         def on_connect(*args, **kwargs):
             self._set_status(ClientStatus.CONNECTED)
-            print("connect")
             call_listeners("connect", *args, **kwargs)
 
         @sio.on("connect_error")
@@ -59,7 +61,6 @@ class BaseClient(Events):
         @sio.on("disconnect")
         def on_disconnect(*args, **kwargs):
             self._set_status(ClientStatus.DISCONNECTED)
-            print("disconnect")
             call_listeners("disconnect", *args, **kwargs)
 
     # ----------------
@@ -86,9 +87,35 @@ class BaseClient(Events):
     def is_running(self) -> bool:
         return not self.is_stopped()
 
-    def call(self, *args, **kwargs):
-        # TODO add return
-        return self.sio.call(*args, **kwargs)
+    def get_structure(self, event: str) -> Union[PayloadSender, None]:
+        return self.events_structure.get(event, None)
+
+    def add_event_structure(self, name: str, structure: PayloadSender) -> None:
+        self.events_structure[name] = structure
+
+    def set_event_structure(self, structures: Dict[str, PayloadSender]) -> None:
+        self.events_structure = structures
+
+    def call(
+        self,
+        event: str,
+        data: Optional[Union[PayloadSender, Any]] = None,
+        namespace: Optional[str] = None,
+        timeout: int = 60,
+        receivers: Optional[List[str]] = None,
+    ):
+        return self.sio.call(
+            event=event,
+            data=data
+            if (structure := self.get_structure(event)) is None or structure == -1
+            else PayloadStructure(
+                event_name=event,
+                data=structure(data),
+                receivers=[] if receivers is None else receivers,
+            ),
+            namespace=namespace,
+            timeout=timeout,
+        )
 
     # ----------------
 
