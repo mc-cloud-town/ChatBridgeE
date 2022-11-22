@@ -1,5 +1,15 @@
+import logging
+import sys
 from chatbridgee.core.client import BaseClient, event
 from chatbridgee.core.structure import ChatEventStructure
+
+log = logging.getLogger("chatbridgee")
+log.setLevel(logging.DEBUG)
+
+(ch := logging.StreamHandler(sys.stdout)).setFormatter(
+    logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+)
+log.addHandler(ch)
 
 
 class Test(BaseClient):

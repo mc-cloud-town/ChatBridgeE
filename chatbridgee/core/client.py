@@ -106,11 +106,11 @@ class BaseClient(Events):
     ):
         return self.sio.call(
             event=event,
-            data=data
-            if (structure := self.get_structure(event)) is None or structure == -1
-            else PayloadStructure(
+            data=PayloadStructure(
                 event_name=event,
-                data=structure(data),
+                data=data
+                if (structure := self.get_structure(event)) is None or structure == -1
+                else structure(data),
                 receivers=[] if receivers is None else receivers,
             ),
             namespace=namespace,
@@ -123,6 +123,7 @@ class BaseClient(Events):
         return self.__name
 
     def stop(self) -> None:
+        self
         self.sio.disconnect()
         with self.__start_stop_lock:
             if not self.is_running():
@@ -140,18 +141,18 @@ class BaseClient(Events):
 
     def start(self) -> None:
         log.info(f"Starting client {self.get_name()}")
+        self.sio
 
-        with self.__start_stop_lock:
-            if self.is_running():
-                log.warning("Client is running, cannot start again")
-                return
-            self._set_status(ClientStatus.CONNECTING)
+        # with self.__start_stop_lock:
+        #     if self.is_running():
+        #         log.warning("Client is running, cannot start again")
+        #         return
+        #     self._set_status(ClientStatus.CONNECTING)
 
-        self.__connection_done.clear()
-        self.sio.connect(self._server_url)
-        self.__connection_done.set()
-
+        # self.__connection_done.clear()
         log.info(f"Started client {self.get_name()}")
+        self.sio.connect(self._server_url)
+        # self.__connection_done.set()
 
     def __disconnect(self) -> None:
         if not self.is_running:
