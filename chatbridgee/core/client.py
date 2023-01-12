@@ -1,6 +1,6 @@
 import logging
 from enum import Enum, auto
-from threading import Event, RLock
+from threading import RLock
 from typing import Any, Dict, List, Optional, ParamSpec, TypeVar, Union
 
 import socketio
@@ -35,7 +35,6 @@ class BaseClient(Events):
 
         self.sio = socketio.Client()
         self.__start_stop_lock = RLock()
-        self.__connection_done = Event()
         self.status = ClientStatus.STOPPED
         self._server_url = "http://localhost:6000"
 
@@ -87,7 +86,7 @@ class BaseClient(Events):
     def is_running(self) -> bool:
         return not self.is_stopped()
 
-    def get_structure(self, event: str) -> Union[PayloadSender, None]:
+    def get_structure(self, event: str) -> Optional[PayloadSender]:
         return self.events_structure.get(event, None)
 
     def add_event_structure(self, name: str, structure: PayloadSender) -> None:
@@ -103,10 +102,12 @@ class BaseClient(Events):
         namespace: Optional[str] = None,
         timeout: int = 60,
         receivers: Optional[List[str]] = None,
+        name: Optional[str] = None,
     ):
         return self.sio.call(
             event=event,
             data=PayloadStructure(
+                name=name or self.get_name(),
                 event_name=event,
                 data=data
                 if (structure := self.get_structure(event)) is None or structure == -1
@@ -131,7 +132,7 @@ class BaseClient(Events):
         self._set_status(ClientStatus.STOPPED)
         log.info("Stop client")
 
-    def set_url(self, url: str):
+    def set_url(self, url: str) -> None:
         self._server_url = url
 
     def get_url(self) -> str:
@@ -146,10 +147,8 @@ class BaseClient(Events):
                 return
             self._set_status(ClientStatus.CONNECTING)
 
-        self.__connection_done.clear()
         log.info(f"Started client {self.get_name()}")
         self.sio.connect(self._server_url)
-        self.__connection_done.set()
 
     def __disconnect(self) -> None:
         if not self.is_running:
