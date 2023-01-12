@@ -1,11 +1,13 @@
 from importlib import util as import_util
 import inspect
-from typing import Any, Callable, ClassVar, TypeVar
+from typing import Any, Callable, ClassVar, Optional, TypeVar, TYPE_CHECKING
 
 from server.utils import MISSING
 
+if TYPE_CHECKING:
+    from server.server import CoroFuncT
+
 PluginT = TypeVar("PluginT", bound="Plugin")
-FuncT = TypeVar("FuncT", bound=Callable[..., Any])
 
 
 class PluginMeta(type):
@@ -55,8 +57,8 @@ class Plugin(metaclass=PluginMeta):
         ...
 
     @classmethod
-    def listener(cls, name: str = MISSING) -> Callable[[FuncT], FuncT]:
-        def decorator(func: FuncT) -> FuncT:
+    def listener(cls, name: str = MISSING) -> Callable[["CoroFuncT"], "CoroFuncT"]:
+        def decorator(func: "CoroFuncT") -> "CoroFuncT":
             # shallow copy
             actual = func
 
@@ -83,7 +85,7 @@ class PluginMixin:
     def add_plugin(self, plugin):
         ...
 
-    def _resolve_name(self, name: str, package: str | None) -> str:
+    def _resolve_name(self, name: str, package: Optional[str]) -> str:
         try:
             return import_util.resolve_name(name, package)
         except ImportError:

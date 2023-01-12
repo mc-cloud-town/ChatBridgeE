@@ -1,11 +1,12 @@
 import asyncio
-from typing import Any, Callable, Coroutine
+from typing import Any, Callable, Coroutine, TypeVar
 from socketio import AsyncServer
 
 from server.plugin import PluginMixin
 from server.utils import MISSING
 
 CoroFunc = Callable[..., Coroutine[Any, Any, Any]]
+CoroFuncT = TypeVar("CoroFuncT", bound=CoroFunc)
 
 
 class Server(AsyncServer, PluginMixin):
@@ -31,3 +32,10 @@ class Server(AsyncServer, PluginMixin):
                 self.extra_events[name].remove(func)
             except ValueError:
                 pass
+
+    def listen(self, name: str = MISSING) -> Callable[[CoroFuncT], CoroFuncT]:
+        def decorator(func: CoroFuncT) -> CoroFuncT:
+            self.add_listener(func, name)
+            return func
+
+        return decorator
