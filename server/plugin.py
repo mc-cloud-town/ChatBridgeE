@@ -1,11 +1,12 @@
 from importlib import util as import_util
 import inspect
+from types import ModuleType
 from typing import Any, Callable, ClassVar, Optional, TypeVar, TYPE_CHECKING
 
 from server.utils import MISSING
 
 if TYPE_CHECKING:
-    from server.server import CoroFuncT
+    from server.server import CoroFuncT, Server
 
 PluginT = TypeVar("PluginT", bound="Plugin")
 
@@ -49,12 +50,25 @@ class Plugin(metaclass=PluginMeta):
     __plugin_events__: ClassVar[tuple[str, list[str]]]
 
     # TODO inject
-    def _inject(self):
-        ...
+    def _inject(self, server: "Server") -> "Plugin":
+        try:
+            for name, method_name in self.__plugin_events__:
+                server.add_listener(getattr(self, method_name), name)
+        finally:
+            try:
+                self.on_unload()
+            except Exception:
+                pass
+
+        return self
 
     # TODO eject
-    def _eject(self):
-        ...
+    def _eject(self, sever: "Server"):
+        for _, method_name in self.__plugin_events__:
+            sever.remove_listener(getattr(self, method_name))
+
+    def on_unload():
+        pass
 
     @classmethod
     def listener(cls, name: str = MISSING) -> Callable[["CoroFuncT"], "CoroFuncT"]:
@@ -81,6 +95,7 @@ class Plugin(metaclass=PluginMeta):
 class PluginMixin:
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
+        self.__extensions: dict[str, ModuleType] = {}
 
     def add_plugin(self, plugin):
         ...
@@ -92,5 +107,17 @@ class PluginMixin:
             # raise ExtensionNotFound(name)
             ...
 
-    def load_plugin(self, name: str):
-        ...
+    def load_plugin(self, name: str, package: Optional[str]) -> str:
+        name = self._resolve_name(name, package)
+
+        if name in self.__extensions:
+            # raise PluginAlreadyLoaded(name)
+            # TODO add error
+            ...
+        # is not fond
+        elif (spec := import_util.find_spec(name)) is None:
+            # raise PluginNotFond(name)
+            # TODO add error
+            ...
+        elif spec.has_location:
+            self
