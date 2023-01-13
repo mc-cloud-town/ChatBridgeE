@@ -2,6 +2,7 @@ from importlib import util as import_util
 import inspect
 from types import ModuleType
 from typing import Any, Callable, ClassVar, Optional, TypeVar, TYPE_CHECKING
+from server.errors import ExtensionNotFound, PluginAlreadyLoaded, PluginNotFond
 
 from server.utils import MISSING
 
@@ -49,8 +50,7 @@ class Plugin(metaclass=PluginMeta):
     __plugin_description__: ClassVar[str]
     __plugin_events__: ClassVar[tuple[str, list[str]]]
 
-    # TODO inject
-    def _inject(self, server: "Server") -> "Plugin":
+    def _inject(self, server: "PluginMixin") -> "Plugin":
         try:
             for name, method_name in self.__plugin_events__:
                 server.add_listener(getattr(self, method_name), name)
@@ -62,7 +62,6 @@ class Plugin(metaclass=PluginMeta):
 
         return self
 
-    # TODO eject
     def _eject(self, sever: "Server"):
         for _, method_name in self.__plugin_events__:
             sever.remove_listener(getattr(self, method_name))
@@ -96,28 +95,40 @@ class PluginMixin:
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.__extensions: dict[str, ModuleType] = {}
+        self.__plugins: dict[str, Plugin] = {}
 
-    def add_plugin(self, plugin):
-        ...
+    def add_plugin(self, plugin: Plugin, *, override: bool = False) -> None:
+        name = plugin.__plugin_name__
+
+        if self.__plugins.get(name) is not None:
+            if not override:
+                raise PluginAlreadyLoaded(name)
+            self.remove_plugin(name)
+
+        plugin = plugin._inject(self)
+        self.__plugins[name] = plugin
+
+    def remove_plugin(self, name: str) -> Optional[Plugin]:
+        if (plugin := self.__plugins.pop(name, None)) is not None:
+            plugin._eject(self)
+
+            return plugin
+
+        return None
 
     def _resolve_name(self, name: str, package: Optional[str]) -> str:
         try:
             return import_util.resolve_name(name, package)
         except ImportError:
-            # raise ExtensionNotFound(name)
-            ...
+            raise ExtensionNotFound(name)
 
     def load_plugin(self, name: str, package: Optional[str]) -> str:
         name = self._resolve_name(name, package)
 
         if name in self.__extensions:
-            # raise PluginAlreadyLoaded(name)
-            # TODO add error
-            ...
+            raise PluginAlreadyLoaded(name)
         # is not fond
         elif (spec := import_util.find_spec(name)) is None:
-            # raise PluginNotFond(name)
-            # TODO add error
-            ...
+            raise PluginNotFond(name)
         elif spec.has_location:
             self
