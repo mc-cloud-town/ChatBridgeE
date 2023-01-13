@@ -56,17 +56,26 @@ class Plugin(metaclass=PluginMeta):
                 server.add_listener(getattr(self, method_name), name)
         finally:
             try:
-                self.on_unload()
+                self.on_load()
             except Exception:
                 pass
 
         return self
 
-    def _eject(self, sever: "Server"):
-        for _, method_name in self.__plugin_events__:
-            sever.remove_listener(getattr(self, method_name))
+    def _eject(self, sever: "Server") -> None:
+        try:
+            for _, method_name in self.__plugin_events__:
+                sever.remove_listener(getattr(self, method_name))
+        finally:
+            try:
+                self.on_load()
+            except Exception:
+                pass
 
-    def on_unload():
+    def on_load() -> None:
+        pass
+
+    def on_unload() -> None:
         pass
 
     @classmethod
