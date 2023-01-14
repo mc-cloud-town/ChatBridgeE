@@ -108,7 +108,7 @@ class Server(PluginMixin):
     async def on_message(self, ctx: Context, msg: Any):
         pass
 
-    async def on_disconnect(self, ctx: Context, *args):
+    async def on_disconnect(self, ctx: Context):
         pass
 
     def __handle_events(self) -> None:
@@ -119,8 +119,8 @@ class Server(PluginMixin):
             self.dispatch("connect", Context(self, sid), auto)
 
         @sio_server.event
-        async def disconnect(sid: str, *args: Any) -> None:
-            self.dispatch("disconnect", Context(self, sid), *args)
+        async def disconnect(sid: str) -> None:
+            self.dispatch("disconnect", Context(self, sid))
 
         @sio_server.on("*")
         async def else_events(event_name: str, sid: str, *args: Any) -> None:
