@@ -3,6 +3,7 @@ import sys
 import traceback
 from typing import Any, Callable, Coroutine, TypeVar
 from socketio import AsyncServer
+from aiohttp import web
 
 from server.plugin import PluginMixin
 from server.utils import MISSING
@@ -11,11 +12,17 @@ CoroFunc = Callable[..., Coroutine[Any, Any, Any]]
 CoroFuncT = TypeVar("CoroFuncT", bound=CoroFunc)
 
 
-class Server(AsyncServer, PluginMixin):
+class Server(PluginMixin):
     def __init__(self):
         super().__init__()
 
         self.extra_events: dict[str, list[CoroFunc]] = {}
+
+        self.sio_server = AsyncServer()
+        self.app = web.Application()
+
+        self.sio_server.attach(self.app)
+        self.__handle_events()
 
     def add_listener(self, func: CoroFunc, name: str = MISSING) -> None:
         name = func.__name__ if name is MISSING else name
@@ -90,3 +97,21 @@ class Server(AsyncServer, PluginMixin):
     async def on_error(self, event_method: str, *args: Any, **kwargs: Any) -> None:
         print(f"Ignoring exception in {event_method}", file=sys.stderr)
         traceback.print_exc()
+
+    def __handle_events(self) -> None:
+        sio_server = self.sio_server
+
+        @sio_server.event
+        async def connect(*args: Any) -> None:
+            self.dispatch("disconnect", *args)
+
+        @sio_server.event
+        async def disconnect(*args: Any) -> None:
+            self.dispatch("disconnect", *args)
+
+        @sio_server.on("*")
+        async def else_events(event_name: str, *args: Any) -> None:
+            self.dispatch(event_name, *args)
+
+    def start(self):
+        web.run_app(self.app)
