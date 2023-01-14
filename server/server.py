@@ -73,7 +73,10 @@ class Server(PluginMixin):
         **kwargs: Any,
     ) -> None:
         try:
-            await coro(event_name, *args, **kwargs)
+            if asyncio.iscoroutinefunction(coro):
+                await coro(*args, **kwargs)
+            else:
+                coro(*args, **kwargs)
         except Exception:
             try:
                 await self.on_error(event_name, *args, **kwargs)
@@ -111,7 +114,14 @@ class Server(PluginMixin):
 
         @sio_server.on("*")
         async def else_events(event_name: str, *args: Any) -> None:
+            print(event_name, *args)
             self.dispatch(event_name, *args)
+
+    def parse_event(self, event_name: str, *args: Any, **kwargs: Any) -> None:
+        ...
 
     def start(self):
         web.run_app(self.app)
+
+    def stop(self):
+        self.app.shutdown()
