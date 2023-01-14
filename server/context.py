@@ -7,7 +7,7 @@ if TYPE_CHECKING:
 
 
 class Context:
-    def __init__(self, sid: str, server: "Server") -> None:
+    def __init__(self, server: "Server", sid: str) -> None:
         self.sid = sid
         self.server = server
 
@@ -30,7 +30,6 @@ class Context:
         callback: Optional[Callable[..., Any]] = None,
         **kwargs: Any,
     ):
-        print(self.sid if to is MISSING and self.sid else to)
         await self.server.sio_server.emit(
             event=event,
             data=data,

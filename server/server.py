@@ -106,16 +106,16 @@ class Server(PluginMixin):
         sio_server = self.sio_server
 
         @sio_server.event
-        async def connect(sid, environ) -> None:
-            self.dispatch("connect", Context(sid, self), environ)
+        async def connect(sid, _, auto) -> None:
+            self.dispatch("connect", Context(self, sid), auto)
 
         @sio_server.event
         async def disconnect(sid: str, *args: Any) -> None:
-            self.dispatch("disconnect", Context(sid, self), *args)
+            self.dispatch("disconnect", Context(self, sid), *args)
 
         @sio_server.on("*")
         async def else_events(event_name: str, sid: str, *args: Any) -> None:
-            self.dispatch(event_name, Context(sid, self), *args)
+            self.dispatch(event_name, Context(self, sid), *args)
 
     def parse_event(self, event_name: str, *args: Any, **kwargs: Any) -> None:
         ...
