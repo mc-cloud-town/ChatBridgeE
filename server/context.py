@@ -11,14 +11,6 @@ class Context:
         self.sid = sid
         self.server = server
 
-        self.emit = lambda *args, **kwargs: self.server.sio_server.emit(
-            *args,
-            to=sid,
-            **kwargs,
-        )
-
-    # async def emit(self, event, data=None, to=None, room=None, skip_sid=None,
-    #                namespace=None, callback=None, **kwargs):
     async def emit(
         self,
         event: str,
