@@ -102,6 +102,15 @@ class Server(PluginMixin):
         print(f"Ignoring exception in {event_method}", file=sys.stderr)
         traceback.print_exc()
 
+    async def on_connect(self, ctx: Context, auth):
+        pass
+
+    async def on_message(self, ctx: Context, msg: Any):
+        pass
+
+    async def on_disconnect(self, ctx: Context, *args):
+        print(args)
+
     def __handle_events(self) -> None:
         sio_server = self.sio_server
 
