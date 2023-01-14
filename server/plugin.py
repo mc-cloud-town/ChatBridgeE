@@ -1,9 +1,10 @@
-from importlib import util as import_util
+from importlib import util as import_util, machinery as import_machine
 import inspect
+import sys
 from types import ModuleType
 from typing import Any, Callable, ClassVar, Optional, TypeVar, TYPE_CHECKING
-from server.errors import ExtensionNotFound, PluginAlreadyLoaded, PluginNotFond
 
+from server.errors import ExtensionNotFound, PluginAlreadyLoaded, PluginNotFond
 from server.utils import MISSING
 
 if TYPE_CHECKING:
@@ -131,7 +132,7 @@ class PluginMixin:
         except ImportError:
             raise ExtensionNotFound(name)
 
-    def load_plugin(self, name: str, package: Optional[str]) -> str:
+    def load_plugin(self, name: str, package: Optional[str] = None) -> str:
         name = self._resolve_name(name, package)
 
         if name in self.__extensions:
@@ -140,4 +141,29 @@ class PluginMixin:
         elif (spec := import_util.find_spec(name)) is None:
             raise PluginNotFond(name)
         elif spec.has_location:
-            self
+            self._load_from_module_spec(spec, name)
+
+    def _load_from_module_spec(self, spec: import_machine.ModuleSpec, key: str) -> None:
+        lib = import_util.module_from_spec(spec)
+        sys.modules[key] = lib
+
+        try:
+            spec.loader.exec_module(lib)
+        except Exception as e:
+            del sys.modules[key]
+            print(e)
+            # TODO add error
+            return
+
+        if (setup := getattr(lib, "setup", None)) is None:
+            # TODO use NoEntryPointError error
+            del sys.modules[key]
+            raise ExtensionNotFound(key)
+
+        try:
+            setup(self)
+        except Exception as e:
+            del sys.modules[key]
+            # TODO add remove from add_plugin call cache
+        else:
+            self.__extensions[key] = lib
