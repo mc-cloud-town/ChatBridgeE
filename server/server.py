@@ -105,8 +105,8 @@ class Server(PluginMixin):
         sio_server = self.sio_server
 
         @sio_server.event
-        async def connect(*args: Any) -> None:
-            self.dispatch("disconnect", *args)
+        async def connect(sid, environ, auth) -> None:
+            self.dispatch("connect", sid, auth, environ)
 
         @sio_server.event
         async def disconnect(*args: Any) -> None:
@@ -122,6 +122,3 @@ class Server(PluginMixin):
 
     def start(self):
         web.run_app(self.app)
-
-    def stop(self):
-        self.app.shutdown()
