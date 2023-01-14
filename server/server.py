@@ -109,7 +109,7 @@ class Server(PluginMixin):
         pass
 
     async def on_disconnect(self, ctx: Context, *args):
-        print(args)
+        pass
 
     def __handle_events(self) -> None:
         sio_server = self.sio_server
