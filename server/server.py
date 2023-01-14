@@ -5,8 +5,9 @@ from typing import Any, Callable, Coroutine, TypeVar
 from socketio import AsyncServer
 from aiohttp import web
 
-from server.plugin import PluginMixin
-from server.utils import MISSING
+from .context import Context
+from .plugin import PluginMixin
+from .utils import MISSING
 
 CoroFunc = Callable[..., Coroutine[Any, Any, Any]]
 CoroFuncT = TypeVar("CoroFuncT", bound=CoroFunc)
@@ -105,20 +106,22 @@ class Server(PluginMixin):
         sio_server = self.sio_server
 
         @sio_server.event
-        async def connect(sid, environ, auth) -> None:
-            self.dispatch("connect", sid, auth, environ)
+        async def connect(sid, environ) -> None:
+            self.dispatch("connect", Context(sid, self), environ)
 
         @sio_server.event
-        async def disconnect(*args: Any) -> None:
-            self.dispatch("disconnect", *args)
+        async def disconnect(sid: str, *args: Any) -> None:
+            self.dispatch("disconnect", Context(sid, self), *args)
 
         @sio_server.on("*")
-        async def else_events(event_name: str, *args: Any) -> None:
-            print(event_name, *args)
-            self.dispatch(event_name, *args)
+        async def else_events(event_name: str, sid: str, *args: Any) -> None:
+            self.dispatch(event_name, Context(sid, self), *args)
 
     def parse_event(self, event_name: str, *args: Any, **kwargs: Any) -> None:
         ...
 
     def start(self):
+        web.run_app(self.app)
+
+    def stop(self):
         web.run_app(self.app)
