@@ -14,7 +14,7 @@ class ExtensionNotFound(PluginError):
 
 
 class PluginAlreadyLoaded(PluginError):
-    """插件已加载"""
+    """插件已加載"""
 
     pass
 
