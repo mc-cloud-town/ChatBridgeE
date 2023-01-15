@@ -16,7 +16,7 @@ PluginT = TypeVar("PluginT", bound="Plugin")
 class PluginMeta(type):
     __plugin_name__: str
     __plugin_description__: str
-    __plugin_events__: tuple[str, list[str]]  # (event_method_name, event_names)
+    __plugin_events__: dict[str, list[str]]  # (event_method_name, event_names)
 
     def __new__(cls: type["PluginMeta"], *args: Any, **kwargs: Any) -> "PluginMeta":
         name, bases, attrs = args
@@ -28,7 +28,7 @@ class PluginMeta(type):
         )
 
         new_cls = super().__new__(cls, name, bases, attrs, **kwargs)
-        events: tuple[str, list[str]] = {}
+        events: dict[str, list[str]] = {}
 
         for base in reversed(new_cls.__mro__):
             for name, func in base.__dict__.items():
@@ -39,7 +39,11 @@ class PluginMeta(type):
                     "__plugin_listener__",
                     False,
                 ):
-                    events[name] = getattr(func, "__event_name__", name).split(" ")
+                    events[name] = getattr(
+                        func,
+                        "__event_name__",
+                        name,
+                    ).split(" ")
 
         new_cls.__plugin_events__ = events
 
@@ -49,12 +53,13 @@ class PluginMeta(type):
 class Plugin(metaclass=PluginMeta):
     __plugin_name__: ClassVar[str]
     __plugin_description__: ClassVar[str]
-    __plugin_events__: ClassVar[tuple[str, list[str]]]
+    __plugin_events__: ClassVar[dict[str, list[str]]]
 
-    def _inject(self, server: "PluginMixin") -> "Plugin":
+    def _inject(self, server: "Server") -> "Plugin":
         try:
-            for name, method_name in self.__plugin_events__:
-                server.add_listener(getattr(self, method_name), name)
+            for name, method_names in self.__plugin_events__.items():
+                for method_name in method_names:
+                    server.add_listener(getattr(self, method_name), name)
         finally:
             try:
                 self.on_load()

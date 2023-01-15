@@ -62,7 +62,7 @@ class Server(PluginMixin):
         else:
             self._schedule_event(coro, method, *args, **kwargs)
 
-        if event_name in self.extra_events:
+        if method in self.extra_events:
             for func in self.extra_events.get(method, []):
                 self._schedule_event(func, event_name, *args, **kwargs)
 

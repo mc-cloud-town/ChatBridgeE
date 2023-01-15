@@ -2,8 +2,10 @@ from server import Plugin, Server
 
 
 class Test(Plugin):
-    def on_load(self) -> None:
-        print("test")
+    @Plugin.listener()
+    async def on_connect(self, a, b):
+        print(self, a, b)
+        print("----------------------------------------")
 
 
 def setup(server: Server):
