@@ -6,7 +6,6 @@ from typing import Any, Callable, Coroutine, TypeVar
 from socketio import AsyncServer
 
 from aiohttp import web
-from aiohttp.web_runner import GracefulExit
 
 from .context import Context
 from .plugin import PluginMixin
@@ -158,16 +157,8 @@ class BaseServer(PluginMixin):
     def start(self):
         web.run_app(self.app)
 
-    async def stop(self):
-        print("Start shutting down")
-        await self.app.shutdown()
-
-        print("Start cleaning up")
-        await self.app.cleanup()
-
-        raise GracefulExit()
-
     async def __on_shutdown(self, app: web.Application):
-        for client in self.clients.values():
+        # use copy inhibition `RuntimeError: dictionary changed size during iteration`
+        for client in self.clients.copy().values():
             # TODO sleep all stop
             await client.disconnect()
