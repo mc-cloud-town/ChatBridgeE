@@ -4,7 +4,9 @@ import sys
 import traceback
 from typing import Any, Callable, Coroutine, TypeVar
 from socketio import AsyncServer
+
 from aiohttp import web
+from aiohttp.web_runner import GracefulExit
 
 from .context import Context
 from .plugin import PluginMixin
@@ -26,6 +28,8 @@ class Server(PluginMixin):
 
         self.sio_server.attach(self.app)
         self.__handle_events()
+
+        self.app.on_shutdown.append(self.__on_shutdown)
 
     def add_listener(self, func: CoroFunc, name: str = MISSING) -> None:
         name = func.__name__ if name is MISSING else name
@@ -154,6 +158,16 @@ class Server(PluginMixin):
     def start(self):
         web.run_app(self.app)
 
-    def stop(self):
-        for i in self.clients.values():
-            ...
+    async def stop(self):
+        print("Start shutting down")
+        await self.app.shutdown()
+
+        print("Start cleaning up")
+        await self.app.cleanup()
+
+        raise GracefulExit()
+
+    async def __on_shutdown(self, app: web.Application):
+        for client in self.clients.values():
+            # TODO sleep all stop
+            await client.disconnect()
