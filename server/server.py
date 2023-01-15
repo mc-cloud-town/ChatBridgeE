@@ -91,10 +91,10 @@ class Server(PluginMixin):
     def __get_args_len(self, coro: Callable[..., Any]) -> int:
         count = 0
         for parameter in inspect.signature(coro).parameters.values():
+            if parameter.kind == inspect.Parameter.VAR_POSITIONAL:
+                return -1
             if parameter.kind == inspect.Parameter.POSITIONAL_OR_KEYWORD:
                 count += 1
-            elif parameter.kind == inspect.Parameter.VAR_POSITIONAL:
-                return -1
         return count
 
     def _schedule_event(
