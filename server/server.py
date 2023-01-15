@@ -20,6 +20,7 @@ class Server(PluginMixin):
 
         self.extra_events: dict[str, list[CoroFunc]] = {}
 
+        self.clients: dict[str, Context] = {}
         self.sio_server = AsyncServer()
         self.app = web.Application()
 
@@ -93,6 +94,7 @@ class Server(PluginMixin):
         for parameter in inspect.signature(coro).parameters.values():
             if parameter.kind == inspect.Parameter.VAR_POSITIONAL:
                 return -1
+            # TODO check else Parameter.kind
             if parameter.kind == inspect.Parameter.POSITIONAL_OR_KEYWORD:
                 count += 1
         return count
@@ -129,11 +131,13 @@ class Server(PluginMixin):
 
         @sio_server.event
         async def connect(sid, _, auto) -> None:
-            self.dispatch("connect", self.get_context(sid), auto)
+            self.clients[sid] = (ctx := self.get_context(sid))
+
+            self.dispatch("connect", ctx, auto)
 
         @sio_server.event
         async def disconnect(sid: str) -> None:
-            self.dispatch("disconnect", self.get_context(sid))
+            self.dispatch("disconnect", self.clients.pop(sid, self.get_context(sid)))
 
         @sio_server.on("*")
         async def else_events(event_name: str, sid: str, *args: Any) -> None:
@@ -151,4 +155,5 @@ class Server(PluginMixin):
         web.run_app(self.app)
 
     def stop(self):
-        web.run_app(self.app)
+        for i in self.clients.values():
+            ...

@@ -15,13 +15,14 @@ class Context:
         self,
         event: str,
         data: Optional[Any] = None,
+        *,
         to: Optional[str] = MISSING,
         room: Optional[str] = None,
         skip_sid: Optional[List[str]] = None,
         namespace: Optional[str] = None,
         callback: Optional[Callable[..., Any]] = None,
         **kwargs: Any,
-    ):
+    ) -> None:
         await self.server.sio_server.emit(
             event=event,
             data=data,
@@ -31,4 +32,17 @@ class Context:
             namespace=namespace,
             callback=callback,
             **kwargs,
+        )
+
+    async def disconnect(
+        self,
+        *,
+        sid: str = MISSING,
+        namespace: Optional[str] = None,
+        ignore_queue: bool = False,
+    ) -> None:
+        await self.server.sio_server.disconnect(
+            sid=self.sid if sid is MISSING else sid,
+            namespace=namespace,
+            ignore_queue=ignore_queue,
         )
