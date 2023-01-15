@@ -8,7 +8,7 @@ from server.errors import ExtensionNotFound, PluginAlreadyLoaded, PluginNotFond
 from server.utils import MISSING
 
 if TYPE_CHECKING:
-    from server.server import CoroFuncT, Server
+    from server.server import CoroFuncT, BaseServer
 
 PluginT = TypeVar("PluginT", bound="Plugin")
 
@@ -55,7 +55,7 @@ class Plugin(metaclass=PluginMeta):
     __plugin_description__: ClassVar[str]
     __plugin_events__: ClassVar[dict[str, list[str]]]
 
-    def _inject(self, server: "Server") -> "Plugin":
+    def _inject(self, server: "BaseServer") -> "Plugin":
         try:
             for name, method_names in self.__plugin_events__.items():
                 for method_name in method_names:
@@ -68,7 +68,7 @@ class Plugin(metaclass=PluginMeta):
 
         return self
 
-    def _eject(self, sever: "Server") -> None:
+    def _eject(self, sever: "BaseServer") -> None:
         try:
             for _, method_name in self.__plugin_events__:
                 sever.remove_listener(getattr(self, method_name))

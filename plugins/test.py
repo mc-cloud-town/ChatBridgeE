@@ -1,4 +1,4 @@
-from server import Plugin, Server
+from server import Plugin, BaseServer
 
 
 class Test(Plugin):
@@ -7,5 +7,5 @@ class Test(Plugin):
         print("----------------------------------------")
 
 
-def setup(server: Server):
+def setup(server: BaseServer):
     server.add_plugin(Test())

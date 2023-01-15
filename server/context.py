@@ -3,11 +3,11 @@ from typing import TYPE_CHECKING, Any, Callable, Optional, List
 from .utils import MISSING
 
 if TYPE_CHECKING:
-    from .server import Server
+    from .server import BaseServer
 
 
 class Context:
-    def __init__(self, server: "Server", sid: str) -> None:
+    def __init__(self, server: "BaseServer", sid: str) -> None:
         self.sid = sid
         self.server = server
 

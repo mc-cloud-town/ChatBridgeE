@@ -16,7 +16,7 @@ CoroFunc = Callable[..., Coroutine[Any, Any, Any]]
 CoroFuncT = TypeVar("CoroFuncT", bound=CoroFunc)
 
 
-class Server(PluginMixin):
+class BaseServer(PluginMixin):
     def __init__(self):
         super().__init__()
 
