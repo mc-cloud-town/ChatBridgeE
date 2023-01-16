@@ -1,5 +1,6 @@
 from importlib import util as import_util, machinery as import_machine
 import inspect
+from pathlib import Path
 import sys
 from types import ModuleType
 from typing import Any, Callable, ClassVar, Optional, TypeVar, TYPE_CHECKING
@@ -147,6 +148,11 @@ class PluginMixin:
             raise PluginNotFond(name)
         elif spec.has_location:
             self._load_from_module_spec(spec, name)
+        else:
+            path = Path(*name.split("."))
+
+            for file in path.glob("[!_]*.py"):
+                self.load_plugin(f"{file.parts[:-1]}.{file.stem}", package)
 
     def _load_from_module_spec(self, spec: import_machine.ModuleSpec, key: str) -> None:
         lib = import_util.module_from_spec(spec)
