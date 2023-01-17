@@ -1,15 +1,18 @@
-from importlib import util as import_util, machinery as import_machine
 import inspect
-from pathlib import Path
 import sys
+from importlib import machinery as import_machine
+from importlib import util as import_util
+from pathlib import Path
 from types import ModuleType
-from typing import Any, Callable, ClassVar, Optional, TypeVar, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Callable, ClassVar, Optional, TypeVar
 
 from server.errors import ExtensionNotFound, PluginAlreadyLoaded, PluginNotFond
 from server.utils import MISSING
 
 if TYPE_CHECKING:
-    from server.server import CoroFuncT, BaseServer
+    from server.core.server import BaseServer, CoroFuncT
+
+__all__ = ("Plugin", "PluginMixin")
 
 PluginT = TypeVar("PluginT", bound="Plugin")
 
@@ -138,7 +141,12 @@ class PluginMixin:
         except ImportError:
             raise ExtensionNotFound(name)
 
-    def load_plugin(self, name: str, package: Optional[str] = None) -> str:
+    def load_plugin(
+        self,
+        name: str,
+        package: Optional[str] = None,
+        recursive: bool = False,
+    ) -> str:
         name = self._resolve_name(name, package)
 
         if name in self.__extensions:
@@ -150,9 +158,14 @@ class PluginMixin:
             self._load_from_module_spec(spec, name)
         else:
             path = Path(*name.split("."))
+            glob_mod = path.rglob if recursive else path.glob
 
-            for file in path.glob("[!_]*.py"):
-                self.load_plugin(f"{file.parts[:-1]}.{file.stem}", package)
+            for file in glob_mod("[!_]*.py"):
+                self.load_plugin(
+                    ".".join([*file.parts[:-1], file.stem]),
+                    package=package,
+                    recursive=recursive,
+                )
 
     def _load_from_module_spec(self, spec: import_machine.ModuleSpec, key: str) -> None:
         lib = import_util.module_from_spec(spec)

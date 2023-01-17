@@ -1,10 +1,11 @@
-from typing import TYPE_CHECKING, Any, Callable, Optional, List
+from typing import TYPE_CHECKING, Any, Callable, List, Optional
 
 from .utils import MISSING
 
 if TYPE_CHECKING:
-    from .server import BaseServer
+    from . import BaseServer
 
+__all__ = ("Context",)
 
 class Context:
     def __init__(self, server: "BaseServer", sid: str) -> None:
