@@ -26,6 +26,7 @@ class BaseServer(PluginMixin):
         self.extra_events: dict[str, list[CoroFunc]] = {}
 
         self.clients: dict[str, Context] = {}
+        self.commands: list[str] = []
         self.sio_server = AsyncServer()
         self.app = web.Application()
 
@@ -158,8 +159,15 @@ class BaseServer(PluginMixin):
     def parse_event(self, event_name: str, *args: Any, **kwargs: Any) -> None:
         ...
 
-    def start(self):
-        web.run_app(self.app)
+    async def start(self) -> web.AppRunner:
+        runner = web.AppRunner(self.app)
+        await runner.setup()
+        site = web.TCPSite(runner, "localhost", 8080)
+        await site.start()
+
+        print("======= Serving on http://127.0.0.1:8080/ ======")
+
+        return runner
 
     async def __on_shutdown(self, app: web.Application):
         # use copy inhibition `RuntimeError: dictionary changed size during iteration`
