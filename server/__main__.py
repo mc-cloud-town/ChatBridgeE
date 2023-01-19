@@ -5,8 +5,8 @@ from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
 from prompt_toolkit.patch_stdout import patch_stdout
 from prompt_toolkit.shortcuts import CompleteStyle
 
-from server import Server, init_logging
-from server.core.command import CommandCompleter
+from . import Server, init_logging
+from .core.command import CommandCompleter
 
 
 def main():
