@@ -8,5 +8,4 @@ class Test(Plugin):
 
 
 def setup(server: BaseServer):
-    # server.add_plugin(Test(server))
-    pass
+    server.add_plugin(Test(server))
