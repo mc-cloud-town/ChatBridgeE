@@ -33,7 +33,7 @@ async def prompt_align():
             )
             or ""
         )
-        ser.dispatch("console_input", result.split())
+        ser.command_manager.call_command(result)
 
 
 async def main():

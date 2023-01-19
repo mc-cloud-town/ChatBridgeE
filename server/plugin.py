@@ -59,6 +59,9 @@ class Plugin(metaclass=PluginMeta):
     __plugin_description__: ClassVar[str]
     __plugin_events__: ClassVar[dict[str, list[str]]]
 
+    def __init__(self, server: "BaseServer") -> None:
+        self.server = server
+
     def _inject(self, server: "BaseServer") -> "Plugin":
         try:
             for name, method_names in self.__plugin_events__.items():
@@ -115,6 +118,10 @@ class PluginMixin:
         super().__init__(*args, **kwargs)
         self.__extensions: dict[str, ModuleType] = {}
         self.__plugins: dict[str, Plugin] = {}
+
+    @property
+    def plugins(self) -> dict[str, Plugin]:
+        return self.__plugins
 
     def add_plugin(self, plugin: Plugin, *, override: bool = False) -> None:
         name = plugin.__plugin_name__

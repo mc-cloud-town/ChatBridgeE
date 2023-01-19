@@ -34,10 +34,13 @@ class CommandManager:
     def add_command(self, name: str, display: Optional[str] = None) -> None:
         self.commands[name] = display
 
-    def add_commands(self, commands: Union[dict[str, Optional[str]], set[str]]) -> None:
+    def add_commands(
+        self,
+        commands: Union[dict[str, Optional[str]], tuple[str]],
+    ) -> None:
         self.commands.update(
-            {command: None for command in commands}  # from set to dict
-            if isinstance(commands, set)
+            {command: None for command in commands}  # from tuple to dict
+            if isinstance(commands, tuple)
             else commands  # is dict
         )
 
@@ -46,7 +49,8 @@ class CommandManager:
 
     def call_command(self, name: str) -> None:
         split = name.split()
-        self.server.dispatch(f"command_{split}", *split)
+        self.server.dispatch(f"command_{'_'.join(split)}", *split)
+        self.server.dispatch(f"command_{split[0]}", *(split[1:]))
 
     @property
     def words(self) -> list[str]:

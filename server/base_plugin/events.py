@@ -20,4 +20,4 @@ class BasePlugin_Events(Plugin):
 
 
 def setup(server: "BaseServer") -> None:
-    server.add_plugin(BasePlugin_Events())
+    server.add_plugin(BasePlugin_Events(server))
