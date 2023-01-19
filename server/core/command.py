@@ -49,8 +49,16 @@ class CommandManager:
 
     def call_command(self, name: str) -> None:
         split = name.split()
-        self.server.dispatch(f"command_{'_'.join(split)}", *split)
-        self.server.dispatch(f"command_{split[0]}", *(split[1:]))
+        base = ""
+        for k in sorted(self.commands.keys(), key=lambda x: len(x)):
+            if name.startswith(k):
+                base = k
+                break
+
+        self.server.dispatch(
+            f"command_{base.replace(' ', '_')}",
+            *split[len(base.split()) :],
+        )
 
     @property
     def words(self) -> list[str]:
