@@ -1,7 +1,7 @@
 import logging
 
 from .. import BaseServer, Context, Plugin
-from ._base import BasePlugin
+from .__base import BasePlugin
 
 log = logging.getLogger("chat-bridgee")
 
