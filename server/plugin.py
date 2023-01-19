@@ -7,7 +7,11 @@ from pathlib import Path
 from types import ModuleType
 from typing import TYPE_CHECKING, Any, Callable, ClassVar, Optional, TypeVar
 
-from server.errors import ExtensionNotFound, PluginAlreadyLoaded, PluginNotFond
+from server.errors import (
+    ExtensionNotFound,
+    ExtensionAlreadyLoaded,
+    ExtensionPluginNotFond,
+)
 from server.utils import MISSING
 
 if TYPE_CHECKING:
@@ -133,7 +137,7 @@ class PluginMixin:
         if self.get_plugin(name) is not None:
             if not override:
                 log.error(f"加載到相同名稱的插劍 {name}")
-                raise PluginAlreadyLoaded(name)
+                raise ExtensionAlreadyLoaded(name)
             self.remove_plugin(name)
 
         plugin = plugin._inject(self)
@@ -178,10 +182,10 @@ class PluginMixin:
         name = self._resolve_name(name, package)
 
         if name in self.__extensions:
-            raise PluginAlreadyLoaded(name)
+            raise ExtensionAlreadyLoaded(name)
         # is not fond
         elif (spec := import_util.find_spec(name)) is None:
-            raise PluginNotFond(name)
+            raise ExtensionPluginNotFond(name)
         elif spec.has_location:
             self._load_from_module_spec(spec, name)
         else:
