@@ -77,8 +77,9 @@ class Plugin(metaclass=PluginMeta):
 
     def _eject(self, sever: "BaseServer") -> None:
         try:
-            for _, method_name in self.__plugin_events__:
-                sever.remove_listener(getattr(self, method_name))
+            for method_names in self.__plugin_events__.values():
+                for method_name in method_names:
+                    sever.remove_listener(getattr(self, method_name))
         finally:
             try:
                 self.on_load()
@@ -126,13 +127,16 @@ class PluginMixin:
     def add_plugin(self, plugin: Plugin, *, override: bool = False) -> None:
         name = plugin.__plugin_name__
 
-        if self.__plugins.get(name) is not None:
+        if self.get_plugin(name) is not None:
             if not override:
                 raise PluginAlreadyLoaded(name)
             self.remove_plugin(name)
 
         plugin = plugin._inject(self)
         self.__plugins[name] = plugin
+
+    def get_plugin(self, name: str) -> Optional[Plugin]:
+        return self.__plugins.get(name)
 
     def remove_plugin(self, name: str) -> Optional[Plugin]:
         if (plugin := self.__plugins.pop(name, None)) is not None:
@@ -153,7 +157,7 @@ class PluginMixin:
         name: str,
         package: Optional[str] = None,
         recursive: bool = False,
-    ) -> str:
+    ) -> None:
         name = self._resolve_name(name, package)
 
         if name in self.__extensions:

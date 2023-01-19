@@ -44,8 +44,9 @@ class CommandManager:
             else commands  # is dict
         )
 
-    def remove_command(self, name: str) -> Optional[str]:
-        return self.commands.pop(name, None)
+    def remove_command(self, *names: str) -> None:
+        for name in names:
+            self.commands.pop(name, None)
 
     def call_command(self, name: str) -> None:
         split = name.split()
