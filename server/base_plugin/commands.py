@@ -1,8 +1,8 @@
 import logging
 
-from server.utils import MISSING
-
 from .. import BaseServer, Plugin
+from ..errors import ExtensionNotFound
+from ..utils import MISSING
 from .__base import BasePlugin
 
 log = logging.getLogger("chat-bridgee")
@@ -37,15 +37,20 @@ class BasePlugin_Commands(BasePlugin):
         if name is MISSING:
             print("請輸入插件名稱")
             return
-        print(self.server.get_plugin(name).__class__)
-        if isinstance(self.server.get_plugin(name), BasePlugin):
-            print("該插劍為內建插件，無法移除")
-            return
-        if self.server.remove_plugin(name) is None:
+        try:
+            self.server.unload_extension(f"plugins.{name}")
+        except ExtensionNotFound:
             print("插件不存在")
             return
         else:
             print("插件移除成功")
+
+    @Plugin.listener()
+    async def on_command_plugin_add(self, name: str = MISSING):
+        if name is MISSING:
+            print("請輸入插件名稱")
+            return
+        self.server.load_plugin(f"plugins.{name}")
 
 
 def setup(server: BaseServer):

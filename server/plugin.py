@@ -78,11 +78,11 @@ class Plugin(metaclass=PluginMeta):
 
         return self
 
-    def _eject(self, sever: "BaseServer") -> None:
+    def _eject(self, server: "BaseServer") -> None:
         try:
             for method_names in self.__plugin_events__.values():
                 for method_name in method_names:
-                    sever.remove_listener(getattr(self, method_name))
+                    server.remove_listener(getattr(self, method_name))
         finally:
             try:
                 self.on_load()
@@ -150,6 +150,19 @@ class PluginMixin:
 
         return None
 
+    def unload_extension(self, name: str, package: Optional[str] = None) -> None:
+        name = self._resolve_name(name, package=package)
+
+        if (module := self.__extensions.pop(name, None)) is None:
+            raise ExtensionNotFound(name)
+
+        self._remove_module_references(module.__name__)
+
+    def _remove_module_references(self, name: str) -> None:
+        for plugin_name, plugin in self.__plugins.copy().items():
+            if _is_submodule(name, plugin.__module__):
+                self.remove_plugin(plugin_name)
+
     def _resolve_name(self, name: str, package: Optional[str]) -> str:
         try:
             return import_util.resolve_name(name, package)
@@ -190,7 +203,6 @@ class PluginMixin:
             spec.loader.exec_module(lib)
         except Exception as e:
             del sys.modules[key]
-            print(e)
             # TODO add error
             return
 
@@ -206,3 +218,7 @@ class PluginMixin:
             # TODO add remove from add_plugin call cache
         else:
             self.__extensions[key] = lib
+
+
+def _is_submodule(parent: str, child: str) -> bool:
+    return parent == child or child.startswith(f"{parent}.")
