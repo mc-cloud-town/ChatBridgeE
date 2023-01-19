@@ -186,7 +186,7 @@ def init_logging(
         console=rich_console,
         tracebacks_theme=(PygmentsSyntaxTheme(MonokaiStyle)),
     )
-    shell_handler.setLevel(logging.DEBUG)
+    shell_handler.setLevel(logging.INFO)
     shell_handler.setFormatter(shell_formatter)
 
     file_handler = LogTimeRotatingFileHandler(
@@ -195,8 +195,7 @@ def init_logging(
     file_handler.setLevel(logging.DEBUG)
     file_handler.setFormatter(file_formatter)
 
-    root_logger = logging.getLogger()
-    root_logger.addHandler(file_handler)
-    root_logger.addHandler(shell_handler)
+    log.addHandler(file_handler)
+    log.addHandler(shell_handler)
 
     return log

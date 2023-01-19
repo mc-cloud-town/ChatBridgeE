@@ -10,6 +10,7 @@ from socketio import AsyncServer
 from ..context import Context
 from ..plugin import PluginMixin
 from ..utils import MISSING
+from . import CommandManager
 
 __all__ = ("BaseServer",)
 
@@ -26,17 +27,14 @@ class BaseServer(PluginMixin):
         self.extra_events: dict[str, list[CoroFunc]] = {}
 
         self.clients: dict[str, Context] = {}
-        self.commands: list[str] = []
         self.sio_server = AsyncServer()
         self.app = web.Application()
+        self.command_manager = CommandManager(self)
 
         self.sio_server.attach(self.app)
         self.__handle_events()
 
         self.app.on_shutdown.append(self.__on_shutdown)
-
-    def add_command(self, command: str) -> None:
-        self.commands.append(command)
 
     def add_listener(self, func: CoroFunc, name: str = MISSING) -> None:
         name = func.__name__ if name is MISSING else name
