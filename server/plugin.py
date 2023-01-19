@@ -1,4 +1,5 @@
 import inspect
+import logging
 import sys
 from importlib import machinery as import_machine
 from importlib import util as import_util
@@ -13,8 +14,9 @@ if TYPE_CHECKING:
     from server.core.server import BaseServer, CoroFuncT
 
 __all__ = ("Plugin", "PluginMixin")
-
 PluginT = TypeVar("PluginT", bound="Plugin")
+
+log = logging.getLogger("chat-bridgee")
 
 
 class PluginMeta(type):
@@ -68,6 +70,7 @@ class Plugin(metaclass=PluginMeta):
                 for method_name in method_names:
                     server.add_listener(getattr(self, method_name), name)
         finally:
+            server.log.info(f"加載插劍: {self.__plugin_name__}")
             try:
                 self.on_load()
             except Exception:
@@ -129,6 +132,7 @@ class PluginMixin:
 
         if self.get_plugin(name) is not None:
             if not override:
+                log.error(f"加載到相同名稱的插劍 {name}")
                 raise PluginAlreadyLoaded(name)
             self.remove_plugin(name)
 

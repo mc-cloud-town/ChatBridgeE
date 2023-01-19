@@ -30,6 +30,7 @@ class BaseServer(PluginMixin):
         self.sio_server = AsyncServer()
         self.app = web.Application()
         self.command_manager = CommandManager(self)
+        self.log = log
 
         self.sio_server.attach(self.app)
         self.__handle_events()

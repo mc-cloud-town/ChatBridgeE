@@ -2,7 +2,7 @@ import logging
 
 from server.utils import MISSING
 
-from .. import Context, BaseServer, Plugin
+from .. import BaseServer, Plugin
 from ._base import BasePlugin
 
 log = logging.getLogger("chat-bridgee")
@@ -20,10 +20,6 @@ class BasePlugin_Commands(BasePlugin):
 
     def on_unload(self) -> None:
         pass
-
-    @Plugin.listener()
-    async def on_disconnect(self, ctx: Context):
-        log.info(f"{ctx.sid} 以斷開")
 
     @Plugin.listener()
     async def on_command_plugin_list(self):
