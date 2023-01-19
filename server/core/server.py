@@ -35,6 +35,9 @@ class BaseServer(PluginMixin):
 
         self.app.on_shutdown.append(self.__on_shutdown)
 
+    def add_command(self, command: str) -> None:
+        self.commands.append(command)
+
     def add_listener(self, func: CoroFunc, name: str = MISSING) -> None:
         name = func.__name__ if name is MISSING else name
 
@@ -133,6 +136,9 @@ class BaseServer(PluginMixin):
 
     async def on_disconnect(self, ctx: Context):
         pass
+
+    async def on_console_input(self, *args: str):
+        ...
 
     def __handle_events(self) -> None:
         sio_server = self.sio_server
