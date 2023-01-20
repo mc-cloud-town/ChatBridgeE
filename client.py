@@ -1,34 +1,58 @@
-import logging
-import sys
-from chatbridgee.core.client import BaseClient, event
-from chatbridgee.core.structure import ChatEventStructure
+from typing import Union
+import socketio
 
-log = logging.getLogger("chatbridgee")
-log.setLevel(logging.DEBUG)
+from mcdreforged.api.all import Info, PluginServerInterface, new_thread
 
-(ch := logging.StreamHandler(sys.stdout)).setFormatter(
-    logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-)
-log.addHandler(ch)
+sio: socketio.Client = None
 
 
-class Test(BaseClient):
-    events_structure = {"test": ChatEventStructure}
-
-    def __init__(self):
-        super().__init__("test")
-
-    @event("connect")
-    def on_connect(self):
-        print("connect")
-        self.call("test", ChatEventStructure(time="awa", player="awa", content="awa"))
-
-    @event("message")
-    def on_message(self, sid: str, data: dict):
-        print("message", sid, data)
+@new_thread("chatbridge-send-data")
+def send_event(event: str, data: Union[str, dict, list]):
+    if sio is not None:
+        sio.send(event, data)
 
 
-client = Test()
+@sio.event
+def connect():
+    print("connection established")
 
-client.start()
-client.wait()
+
+@sio.event
+def disconnect():
+    print("disconnected from server")
+
+
+def on_load(server: PluginServerInterface, old_module):
+    ...
+
+
+def on_unload(server: PluginServerInterface):
+    ...
+
+
+def on_server_start(server: PluginServerInterface):
+    ...
+
+
+def on_server_startup(server: PluginServerInterface):
+    ...
+
+
+def on_server_stop(server: PluginServerInterface, return_code: int):
+    ...
+
+
+def on_info(server: PluginServerInterface, info: Info):
+    ...
+
+
+def on_player_joined(server: PluginServerInterface, player_name: str, info: Info):
+    ...
+
+
+def on_player_left(server: PluginServerInterface, player_name: str):
+    ...
+
+
+sio.connect("http://localhost:5000")
+sio.wait()
