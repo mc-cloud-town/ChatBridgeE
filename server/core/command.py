@@ -56,6 +56,10 @@ class CommandManager:
                 base = k
                 break
 
+        if not base:
+            print(f"未知指令: {name}")
+            return
+
         self.server.dispatch(
             f"command_{base.replace(' ', '_')}",
             *split[len(base.split()) :],

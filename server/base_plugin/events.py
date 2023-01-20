@@ -6,7 +6,7 @@ from .__base import BasePlugin
 log = logging.getLogger("chat-bridgee")
 
 
-class BasePlugin_Events(BasePlugin):
+class BasePlugin_Events(BasePlugin, description="事件日誌"):
     @Plugin.listener()
     async def on_connect(self, ctx: Context):
         log.info(f"{ctx.sid} 以連接")

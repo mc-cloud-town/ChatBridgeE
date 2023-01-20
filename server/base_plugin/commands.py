@@ -11,7 +11,7 @@ from .__base import BasePlugin
 log = logging.getLogger("chat-bridgee")
 
 
-class BasePlugin_Commands(BasePlugin):
+class BasePlugin_Commands(BasePlugin, description="指令處理"):
     def on_load(self) -> None:
         commands = (
             "plugin list",
@@ -34,6 +34,7 @@ class BasePlugin_Commands(BasePlugin):
                 str(i + 1),
                 str(k),
                 "內建插件" if isinstance(v, BasePlugin) else f"{v.__module__[8:]}",
+                v.__plugin_description__,
             )
 
         rich_print(table)
