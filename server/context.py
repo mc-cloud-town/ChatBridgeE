@@ -12,6 +12,7 @@ class Context:
     def __init__(self, server: "BaseServer", sid: str) -> None:
         self.sid = sid
         self.server = server
+        self.log = server.log
 
     async def emit(
         self,
