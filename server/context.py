@@ -7,6 +7,7 @@ if TYPE_CHECKING:
 
 __all__ = ("Context",)
 
+
 class Context:
     def __init__(self, server: "BaseServer", sid: str) -> None:
         self.sid = sid

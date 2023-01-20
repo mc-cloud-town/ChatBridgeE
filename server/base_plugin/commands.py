@@ -1,7 +1,10 @@
 import logging
 
+from rich.table import Table
+from rich import print as rich_print
+
 from .. import BaseServer, Plugin
-from ..errors import ExtensionNotFound
+from ..errors import ExtensionAlreadyLoaded, ExtensionNotFound
 from ..utils import MISSING
 from .__base import BasePlugin
 
@@ -14,6 +17,7 @@ class BasePlugin_Commands(BasePlugin):
             "plugin list",
             "plugin add",
             "plugin remove",
+            "plugin reload",
         )
 
         self.server.command_manager.add_commands(commands)
@@ -23,14 +27,16 @@ class BasePlugin_Commands(BasePlugin):
 
     @Plugin.listener()
     async def on_command_plugin_list(self):
-        plugins = [
-            f"{i+1}: {k}" + ("\t[內建插件]" if isinstance(v, BasePlugin) else "")
-            for i, (k, v) in enumerate(self.server.plugins.items())
-        ]
+        table = Table(show_header=False, show_lines=True, header_style="bold magenta")
 
-        print("------ Plugins ------")
-        print("\n".join(plugins))
-        print("---------------------")
+        for i, (k, v) in enumerate(self.server.plugins.items()):
+            table.add_row(
+                str(i + 1),
+                str(k),
+                "內建插件" if isinstance(v, BasePlugin) else f"{v.__module__[8:]}",
+            )
+
+        rich_print(table)
 
     @Plugin.listener()
     async def on_command_plugin_remove(self, name: str = MISSING):
@@ -50,7 +56,19 @@ class BasePlugin_Commands(BasePlugin):
         if name is MISSING:
             print("請輸入插件名稱")
             return
-        self.server.load_plugin(f"plugins.{name}")
+        try:
+            self.server.load_plugin(f"plugins.{name}")
+        except ExtensionAlreadyLoaded:
+            print("插劍已經加載, 若要重新加載請使用 plugin reload")
+
+    @Plugin.listener()
+    async def on_command_plugin_reload(self, name: str = MISSING):
+        if name is MISSING:
+            print("請輸入插件名稱")
+            return
+
+        await self.on_command_plugin_remove(name)
+        await self.on_command_plugin_add(name)
 
 
 def setup(server: BaseServer):
