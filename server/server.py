@@ -10,7 +10,6 @@ class Server(BaseServer):
         self.load_plugin(
             f"{__package__}.base_plugin",
             recursive=True,
-            block_plugin=self.config.get("stop_plugins"),
         )
 
     async def on_ping(self, ctx: Context):

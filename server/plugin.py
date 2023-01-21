@@ -200,6 +200,7 @@ class PluginMixin:
                     pa,
                     package=package,
                     recursive=recursive,
+                    block_plugin=block_plugin,
                 )
 
     def _load_from_module_spec(self, spec: import_machine.ModuleSpec, key: str) -> None:

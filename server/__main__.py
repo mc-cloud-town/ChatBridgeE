@@ -14,7 +14,11 @@ def main():
 
     ser = Server()
 
-    ser.load_plugin("plugins", recursive=True)
+    ser.load_plugin(
+        "plugins",
+        recursive=True,
+        block_plugin=ser.config.get("stop_plugins"),
+    )
 
     async def prompt_align():
         session = PromptSession(

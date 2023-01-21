@@ -71,8 +71,11 @@ class Config:
         data.update({key: value})
         self.write(data)
 
-    def append(self, key: str, value: Any) -> None:
+    def append(self, key: str, value: Any, *, only_one: bool = False) -> None:
         if (data := self.get(key)) is not None and type(data) is not list:
+            return None
+
+        if only_one and value in data:
             return None
 
         self.set(key, [*(data or []), value])

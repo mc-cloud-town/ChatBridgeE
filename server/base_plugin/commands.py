@@ -51,7 +51,7 @@ class BasePlugin_Commands(BasePlugin, description="指令處理"):
             print("插件不存在")
             return
         else:
-            self.config.append("stop_plugins", module)
+            self.config.append("stop_plugins", module, only_one=True)
             print("插件移除成功")
 
     @Plugin.listener()
