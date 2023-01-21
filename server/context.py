@@ -4,15 +4,17 @@ from .utils import MISSING
 
 if TYPE_CHECKING:
     from . import BaseServer
+    from .core.config import UserAuth
 
 __all__ = ("Context",)
 
 
 class Context:
-    def __init__(self, server: "BaseServer", sid: str) -> None:
+    def __init__(self, server: "BaseServer", sid: str, user: "UserAuth") -> None:
         self.sid = sid
         self.server = server
         self.log = server.log
+        self.user = user
 
     async def emit(
         self,
@@ -49,3 +51,7 @@ class Context:
             namespace=namespace,
             ignore_queue=ignore_queue,
         )
+
+    @property
+    def display_name(self) -> str:
+        return self.user.display_name or self.user.name

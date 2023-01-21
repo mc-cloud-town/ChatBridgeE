@@ -107,6 +107,6 @@ class ConfigType(TypedDict):
 
 
 class UserAuth(TypedDict):
-    user: str
+    name: str
     password: str
     display_name: Optional[str]

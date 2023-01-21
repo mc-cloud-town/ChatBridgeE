@@ -39,18 +39,9 @@ def display_help(source: CommandSource):
     source.reply(tr("help_message", version=META.version, prefix="!!cbe"))
 
 
-def display_status(source: CommandSource):
-    # source.reply(tr("help_message", version=META.version, prefix="!!cbe"))
-    ...
-
-
 def on_load(server: PluginServerInterface, old_module):
     server.register_help_message("!!cbe", tr("help_summary"))
-    server.register_command(
-        Literal("!!cbe").runs(display_help)
-        # .then(Literal("status"))
-        # .runs(display_status),
-    )
+    server.register_command(Literal("!!cbe").runs(display_help))
 
     @new_thread("chatbridge-start")
     def start():
@@ -80,7 +71,7 @@ def on_server_stop(server: PluginServerInterface, return_code: int):
 
 def on_info(server: PluginServerInterface, info: Info):
     if info.is_user and info.is_from_server:
-        send_event("player_chat", {"content": info.content, "player": info.player})
+        send_event("player_chat", [info.content, info.player])
 
 
 def on_player_joined(server: PluginServerInterface, player_name: str, info: Info):

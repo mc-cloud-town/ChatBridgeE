@@ -139,23 +139,22 @@ class BaseServer(PluginMixin):
     async def on_disconnect(self, ctx: Context):
         pass
 
-    async def on_console_input(self, *args: str):
-        ...
-
     def __handle_events(self) -> None:
         sio_server = self.sio_server
 
         @sio_server.event
-        async def connect(sid, _, auth) -> None:
+        async def connect(sid: str, _, auth: Any) -> None:
             try:
-                if not self.check_user(auth["name"], auth["password"]):
+                if not (user := self.check_user(auth["name"], auth["password"])):
                     self.sio_server.disconnect(sid)
+                    log.info("客戶端登入失敗", auth["name"])
                     raise PermissionError
             except (KeyError, PermissionError):
+                log.info("客戶端登入失敗", sid)
                 self.sio_server.disconnect(sid)
                 return
 
-            self.clients[sid] = (ctx := self.get_context(sid))
+            self.clients[sid] = (ctx := self.get_context(sid, user))
             self.dispatch("connect", ctx, auth)
 
         @sio_server.event
@@ -168,15 +167,11 @@ class BaseServer(PluginMixin):
         @sio_server.on("*")
         async def else_events(event_name: str, sid: str, *args: Any) -> None:
             log.debug(f"收到從 {sid} 發送的事件 {event_name}")
+            print(event_name, args)
             self.dispatch(event_name, self.get_context(sid), *args)
 
-    def get_context(self, sid: str):
-        ctx = Context(self, sid)
-
-        return ctx
-
-    def parse_event(self, event_name: str, *args: Any, **kwargs: Any) -> None:
-        ...
+    def get_context(self, sid: str, user: UserAuth):
+        return Context(self, sid, user)
 
     async def start(self) -> web.AppRunner:
         runner = web.AppRunner(self.app)
@@ -202,7 +197,7 @@ class BaseServer(PluginMixin):
                 "password"
             ) == password:
                 return UserAuth(
-                    user=name,
+                    name=name,
                     password=password,
                     display_name=user.get("display_name"),
                 )
