@@ -141,8 +141,8 @@ class BaseServer(PluginMixin):
     def __handle_events(self) -> None:
         sio_server = self.sio_server
 
-        @sio_server.event("connect")
-        async def _(sid: str, _, auth: Any) -> None:
+        @sio_server.event
+        async def on_connect(sid: str, _, auth: Any) -> None:
             try:
                 if not (user := self.check_user(auth["name"], auth["password"])):
                     log.info("客戶端登入失敗", auth["name"])
@@ -155,15 +155,15 @@ class BaseServer(PluginMixin):
             self.clients[sid] = (ctx := self.get_context(sid, user))
             self.dispatch("connect", ctx, auth)
 
-        @sio_server.event("disconnect")
-        async def _(sid: str) -> None:
+        @sio_server.event
+        async def on_disconnect(sid: str) -> None:
             if (client := self.clients.pop(sid, None)) is None:
                 return
 
             self.dispatch("disconnect", client)
 
         @sio_server.on("*")
-        async def _(event_name: str, sid: str, data: Any) -> None:
+        async def on_else_event(event_name: str, sid: str, data: Any) -> None:
             log.debug(f"收到從 {sid} 發送的事件 {event_name}")
             args = [data]
 

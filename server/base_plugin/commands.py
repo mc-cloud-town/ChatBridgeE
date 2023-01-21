@@ -76,7 +76,6 @@ class BasePlugin_Commands(BasePlugin, description="指令處理"):
                 recursive=True,
                 block_plugin=self.config.get("stop_plugins"),
             )
-            self.log
             print("插件重新加載完成")
             return
 

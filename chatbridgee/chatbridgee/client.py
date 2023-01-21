@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import Union
 
 import socketio
@@ -6,10 +7,14 @@ from mcdreforged.api.all import (
     Info,
     Literal,
     PluginServerInterface,
-    new_thread,
     RTextBase,
     ServerInterface,
+    new_thread,
 )
+
+from chatbridgee.chatbridgee.config import ChatBridgeEConfig
+
+from .read import ReadClient
 
 META = ServerInterface.get_instance().as_plugin_server_interface().get_self_metadata()
 sio = socketio.Client()
@@ -40,6 +45,25 @@ def display_help(source: CommandSource):
 
 
 def on_load(server: PluginServerInterface, old_module):
+    config_path = Path(server.get_data_folder()) / "config.json"
+
+    if not config_path.is_file():
+        server.save_config_simple(ChatBridgeEConfig.get_default())
+
+    try:
+        server.load_config_simple(
+            file_name=config_path,
+            in_data_folder=False,
+            target_class=ChatBridgeEConfig,
+        )
+    except:  # noqa: E722
+        server.logger.exception(
+            "Failed to read the config file! ChatBridgeE might not work properly"
+        )
+        server.logger.error("Fix the configure file and then reload the plugin")
+
+    ReadClient(server, sio)
+
     server.register_help_message("!!cbe", tr("help_summary"))
     server.register_command(Literal("!!cbe").runs(display_help))
 

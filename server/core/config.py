@@ -102,8 +102,8 @@ class Config:
 
 
 class ConfigType(TypedDict):
-    stop_plugins: list[str]  # 關閉的插劍
-    users: list["UserAuth"]  # 白名單
+    stop_plugins: list[str]
+    users: list["UserAuth"]
 
 
 class UserAuth(TypedDict):
