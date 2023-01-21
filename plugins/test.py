@@ -4,6 +4,7 @@ from server import Plugin, BaseServer
 class Test(Plugin):
     @Plugin.listener()
     async def on_connect(self, a, b):
+        print(a, b)
         print("----------------------------------------")
 
 

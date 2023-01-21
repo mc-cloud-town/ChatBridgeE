@@ -54,7 +54,8 @@ def on_load(server: PluginServerInterface, old_module):
 
     @new_thread("chatbridge-start")
     def start():
-        sio.connect("http://localhost:8080")
+        # TODO add config
+        sio.connect("http://localhost:8080", auth={"name": "", "password": ""})
         sio.wait()
 
     start()
