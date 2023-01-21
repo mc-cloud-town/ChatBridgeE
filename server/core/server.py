@@ -2,10 +2,12 @@ import asyncio
 import inspect
 import logging
 import traceback
-from typing import Any, Callable, Coroutine, TypeVar
+from typing import Any, Callable, Coroutine, Optional, TypeVar
 
 from aiohttp import web
 from socketio import AsyncServer
+
+from server.core.config import UserAuth
 
 from ..context import Context
 from ..plugin import PluginMixin
@@ -144,14 +146,24 @@ class BaseServer(PluginMixin):
         sio_server = self.sio_server
 
         @sio_server.event
-        async def connect(sid, _, auto) -> None:
-            self.clients[sid] = (ctx := self.get_context(sid))
+        async def connect(sid, _, auth) -> None:
+            try:
+                if not self.check_user(auth["name"], auth["password"]):
+                    self.sio_server.disconnect(sid)
+                    raise PermissionError
+            except (KeyError, PermissionError):
+                self.sio_server.disconnect(sid)
+                return
 
-            self.dispatch("connect", ctx, auto)
+            self.clients[sid] = (ctx := self.get_context(sid))
+            self.dispatch("connect", ctx, auth)
 
         @sio_server.event
         async def disconnect(sid: str) -> None:
-            self.dispatch("disconnect", self.clients.pop(sid, self.get_context(sid)))
+            if (client := self.clients.pop(sid, None)) is None:
+                return
+
+            self.dispatch("disconnect", client)
 
         @sio_server.on("*")
         async def else_events(event_name: str, sid: str, *args: Any) -> None:
@@ -181,3 +193,20 @@ class BaseServer(PluginMixin):
         for client in self.clients.copy().values():
             # TODO sleep all stop
             await client.disconnect()
+
+    def check_user(self, name: str, password: str) -> Optional[UserAuth]:
+        users = self.config.get("users", {})
+
+        try:
+            if (user := dict(users.get(name))) is not None and user.get(
+                "password"
+            ) == password:
+                return UserAuth(
+                    user=name,
+                    password=password,
+                    display_name=user.get("display_name"),
+                )
+        except TypeError:
+            pass
+
+        return None

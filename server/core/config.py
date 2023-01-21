@@ -97,8 +97,16 @@ class Config:
     def default_config(self) -> "ConfigType":
         return ConfigType(
             stop_plugins=[],
+            users=[],
         )
 
 
 class ConfigType(TypedDict):
     stop_plugins: list[str]  # 關閉的插劍
+    users: list["UserAuth"]  # 白名單
+
+
+class UserAuth(TypedDict):
+    user: str
+    password: str
+    display_name: Optional[str]
