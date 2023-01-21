@@ -1,7 +1,7 @@
 import json
 import logging
 from pathlib import Path
-from typing import Any, Literal, Optional, TypedDict, Union
+from typing import Any, Literal, Optional, TypeVar, TypedDict, Union
 
 import yaml
 
@@ -9,6 +9,7 @@ __all__ = ("Config", "ConfigType")
 
 
 log = logging.getLogger("chat-bridgee")
+_RT = TypeVar("_RT")
 
 
 class Config:
@@ -53,8 +54,40 @@ class Config:
 
         return ConfigType(**data)
 
-    def get(self, key: str, default: Optional[Any] = None) -> Any:
+    def write(self, data: "ConfigType") -> None:
+        self.check_config()
+
+        with self.filepath.open("w", encoding="UTF-8") as f:
+            if self.config_type == "json":
+                json.dump(data, f)
+            elif self.config_type == "yaml":
+                yaml.dump(data, f)
+
+    def get(self, key: str, default: Optional[_RT] = None) -> _RT:
         return self.read_config().get(key, default)
+
+    def set(self, key: str, value: Any) -> None:
+        data = self.read_config()
+        data.update({key: value})
+        self.write(data)
+
+    def append(self, key: str, value: Any) -> None:
+        if (data := self.get(key)) is not None and type(data) is not list:
+            return None
+
+        self.set(key, [*(data or []), value])
+
+    def remove(self, key: str, value: Any) -> None:
+        if type(self.get(key)) is not list:
+            return None
+
+        try:
+            data = self.get(key, [])
+            data.remove(value)
+        except ValueError:
+            pass
+        else:
+            self.set(key, data)
 
     @classmethod
     @property

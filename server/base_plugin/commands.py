@@ -44,12 +44,14 @@ class BasePlugin_Commands(BasePlugin, description="指令處理"):
         if name is MISSING:
             print("請輸入插件名稱")
             return
+        module = f"plugins.{name}"
         try:
-            self.server.unload_extension(f"plugins.{name}")
+            self.server.unload_extension(module)
         except ExtensionNotFound:
             print("插件不存在")
             return
         else:
+            self.config.append("stop_plugins", module)
             print("插件移除成功")
 
     @Plugin.listener()
@@ -57,15 +59,25 @@ class BasePlugin_Commands(BasePlugin, description="指令處理"):
         if name is MISSING:
             print("請輸入插件名稱")
             return
+
+        module = f"plugins.{name}"
         try:
-            self.server.load_plugin(f"plugins.{name}")
+            self.server.load_plugin(module)
         except ExtensionAlreadyLoaded:
             print("插劍已經加載, 若要重新加載請使用 plugin reload")
+        else:
+            self.config.remove("stop_plugins", module)
 
     @Plugin.listener()
     async def on_command_plugin_reload(self, name: str = MISSING):
         if name is MISSING:
-            print("請輸入插件名稱")
+            self.server.load_plugin(
+                "plugins",
+                recursive=True,
+                block_plugin=self.config.get("stop_plugins"),
+            )
+            self.log
+            print("插件重新加載完成")
             return
 
         await self.on_command_plugin_remove(name)

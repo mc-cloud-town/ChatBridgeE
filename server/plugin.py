@@ -7,15 +7,11 @@ from pathlib import Path
 from types import ModuleType
 from typing import TYPE_CHECKING, Any, Callable, ClassVar, Optional, TypeVar
 
-from server.errors import (
-    ExtensionNotFound,
-    ExtensionAlreadyLoaded,
-    ExtensionPluginNotFond,
-)
-from server.utils import MISSING
+from .errors import ExtensionAlreadyLoaded, ExtensionNotFound, ExtensionPluginNotFond
+from .utils import MISSING
 
 if TYPE_CHECKING:
-    from server.core.server import BaseServer, CoroFuncT
+    from .core.server import BaseServer, CoroFuncT
 
 __all__ = ("Plugin", "PluginMixin")
 PluginT = TypeVar("PluginT", bound="Plugin")
@@ -67,6 +63,8 @@ class Plugin(metaclass=PluginMeta):
 
     def __init__(self, server: "BaseServer") -> None:
         self.server = server
+        self.config = server.config
+        self.log = server.log
 
     def _inject(self, server: "BaseServer") -> "Plugin":
         try:
@@ -178,6 +176,7 @@ class PluginMixin:
         name: str,
         package: Optional[str] = None,
         recursive: bool = False,
+        block_plugin: list[str] = [],
     ) -> None:
         name = self._resolve_name(name, package)
 
@@ -193,8 +192,12 @@ class PluginMixin:
             glob_mod = path.rglob if recursive else path.glob
 
             for file in glob_mod("[!_]*.py"):
+                pa = ".".join([*file.parts[:-1], file.stem])
+                if pa in block_plugin:
+                    continue
+
                 self.load_plugin(
-                    ".".join([*file.parts[:-1], file.stem]),
+                    pa,
                     package=package,
                     recursive=recursive,
                 )
