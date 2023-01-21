@@ -5,10 +5,10 @@
 ```mermaid
 flowchart LR
   subgraph Minecraft Host
-  Survive[Minecraft Survive Server]
-  Create[Minecraft Create Server]
-  Mirror[Minecraft Mirror Server]
-  server_else(...)
+    Survive[Minecraft Survive Server]
+    Create[Minecraft Create Server]
+    Mirror[Minecraft Mirror Server]
+    server_else(...)
   end
   MCDR("mcdr-ChatBridgeE-plugin") <--> Survive & Create & Mirror & server_else
 
@@ -28,7 +28,8 @@ flowchart LR
   cli --> cli_reload & cli_add & cli_remove & cli_list & cli_else
 
   server(ChatBridgeE Server)
-  server <--> plugins & cli & MCDR
+  client <--> MCDR
+  server <--> client & plugins & cli
 ```
 
 ## 參考
