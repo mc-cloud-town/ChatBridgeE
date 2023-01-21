@@ -129,5 +129,5 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-config*.json
-config*.yaml
+chatbridgee-*.json
+chatbridgee-*.yaml

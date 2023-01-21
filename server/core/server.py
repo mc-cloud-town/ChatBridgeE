@@ -10,7 +10,7 @@ from socketio import AsyncServer
 from ..context import Context
 from ..plugin import PluginMixin
 from ..utils import MISSING
-from . import CommandManager
+from . import CommandManager, Config
 
 __all__ = ("BaseServer",)
 
@@ -21,7 +21,7 @@ CoroFuncT = TypeVar("CoroFuncT", bound=CoroFunc)
 
 
 class BaseServer(PluginMixin):
-    def __init__(self):
+    def __init__(self, config_type: str = "yaml"):
         super().__init__()
 
         self.extra_events: dict[str, list[CoroFunc]] = {}
@@ -31,6 +31,7 @@ class BaseServer(PluginMixin):
         self.app = web.Application()
         self.command_manager = CommandManager(self)
         self.log = log
+        self.config = Config("chatbridgee-config", config_type=config_type)
 
         self.sio_server.attach(self.app)
         self.__handle_events()

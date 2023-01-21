@@ -1,13 +1,12 @@
 import json
 import logging
 from pathlib import Path
-from typing import Literal, Optional, TypedDict, TypeVar, Union
+from typing import Any, Literal, Optional, TypedDict, Union
 
 import yaml
 
 __all__ = ("Config", "ConfigType")
 
-P = TypeVar("P")
 
 log = logging.getLogger("chat-bridgee")
 
@@ -54,8 +53,7 @@ class Config:
 
         return ConfigType(**data)
 
-    # TODO use dict key, value type
-    def get(self, key: P, default: Optional[P] = None):
+    def get(self, key: str, default: Optional[Any] = None) -> Any:
         return self.read_config().get(key, default)
 
     @classmethod
