@@ -54,4 +54,4 @@ class Context:
 
     @property
     def display_name(self) -> str:
-        return self.user.display_name or self.user.name
+        return self.user.get("display_name", self.user["name"])

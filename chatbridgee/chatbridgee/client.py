@@ -21,7 +21,7 @@ def tr(key: str, *args, **kwargs) -> RTextBase:
 
 @new_thread("chatbridge-send-data")
 def send_event(event: str, data: Union[str, dict, list] = None):
-    if sio is not None:
+    if sio.connected:
         sio.call(event, data)
 
 
@@ -46,7 +46,13 @@ def on_load(server: PluginServerInterface, old_module):
     @new_thread("chatbridge-start")
     def start():
         # TODO add config
-        sio.connect("http://localhost:8080", auth={"name": "", "password": ""})
+        sio.connect(
+            "http://localhost:8080",
+            auth={
+                "name": "surver",
+                "password": "test",
+            },
+        )
         sio.wait()
 
     start()
@@ -71,7 +77,7 @@ def on_server_stop(server: PluginServerInterface, return_code: int):
 
 def on_info(server: PluginServerInterface, info: Info):
     if info.is_user and info.is_from_server:
-        send_event("player_chat", [info.content, info.player])
+        send_event("player_chat", [info.player, info.content])
 
 
 def on_player_joined(server: PluginServerInterface, player_name: str, info: Info):
