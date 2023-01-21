@@ -1,0 +1,16 @@
+{
+  "id": "chatbridgee",
+  "version": "1.0.0",
+  "name": "chatbridgee v1 for MCDR",
+  "description": {
+    "zh_cn": "跨服聊天"
+  },
+  "author": ["monkey-cat<github:a3510377>"],
+  "link": "https://github.com/mc-cloud-town/ChatBridgeE",
+  "dependencies": {
+    "mcdreforged": ">=2.2.0-"
+  },
+  "archive_name": "ChatBridgeE.pyz",
+  "entrypoint": "chatbridgee.client",
+  "resources": ["lang"]
+}

@@ -1,0 +1,8 @@
+chatbridgee:
+  help_message: |
+    ------MCDR ChatBridgee 插件 v{version}------
+    一個跨服聊天客戶端插件
+    指令前綴: {prefix}
+    §7{prefix}§r 顯示幫助信息
+  help_summary: '跨服聊天控制'
+# §7{prefix} status§r 查看跨服聊天狀態

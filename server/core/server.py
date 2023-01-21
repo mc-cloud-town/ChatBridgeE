@@ -154,6 +154,7 @@ class BaseServer(PluginMixin):
 
         @sio_server.on("*")
         async def else_events(event_name: str, sid: str, *args: Any) -> None:
+            log.debug(f"收到從 {sid} 發送的事件 {event_name}")
             self.dispatch(event_name, self.get_context(sid), *args)
 
     def get_context(self, sid: str):
