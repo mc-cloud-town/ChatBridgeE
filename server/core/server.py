@@ -164,7 +164,7 @@ class BaseServer(PluginMixin):
             self.dispatch("disconnect", client)
 
         @sio_server.on("*")
-        async def else_event(event_name: str, sid: str, data: Any) -> None:
+        async def else_event(event_name: str, sid: str, data: Any = None) -> None:
             log.debug(f"收到從 {sid} 發送的事件 {event_name}")
             args = [data]
 

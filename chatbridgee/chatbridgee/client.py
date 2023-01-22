@@ -50,7 +50,7 @@ def on_load(server: PluginServerInterface, old_module):
         server.save_config_simple(ChatBridgeEConfig.get_default())
 
     try:
-        config = server.load_config_simple(
+        config: ChatBridgeEConfig = server.load_config_simple(
             file_name=config_path,
             in_data_folder=False,
             target_class=ChatBridgeEConfig,
@@ -68,12 +68,12 @@ def on_load(server: PluginServerInterface, old_module):
 
     @new_thread("chatbridge-start")
     def start():
-        # TODO add config
+        auth = config.client_info
         sio.connect(
-            "http://localhost:8080",
+            f"http://{config.server_address}",
             auth={
-                "name": "surver",
-                "password": "test",
+                "name": auth.name,
+                "password": auth.password,
             },
         )
         sio.wait()
