@@ -12,8 +12,7 @@ from mcdreforged.api.all import (
     new_thread,
 )
 
-from chatbridgee.chatbridgee.config import ChatBridgeEConfig
-
+from .config import ChatBridgeEConfig
 from .read import ReadClient
 
 META = ServerInterface.get_instance().as_plugin_server_interface().get_self_metadata()
@@ -51,7 +50,7 @@ def on_load(server: PluginServerInterface, old_module):
         server.save_config_simple(ChatBridgeEConfig.get_default())
 
     try:
-        server.load_config_simple(
+        config = server.load_config_simple(
             file_name=config_path,
             in_data_folder=False,
             target_class=ChatBridgeEConfig,
@@ -62,7 +61,7 @@ def on_load(server: PluginServerInterface, old_module):
         )
         server.logger.error("Fix the configure file and then reload the plugin")
 
-    ReadClient(server, sio)
+    ReadClient(server, sio, config)
 
     server.register_help_message("!!cbe", tr("help_summary"))
     server.register_command(Literal("!!cbe").runs(display_help))

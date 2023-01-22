@@ -59,9 +59,9 @@ class Config:
 
         with self.filepath.open("w", encoding="UTF-8") as f:
             if self.config_type == "json":
-                json.dump(data, f)
+                json.dump(data, f, ensure_ascii=False)
             elif self.config_type == "yaml":
-                yaml.dump(data, f)
+                yaml.dump(data, f, allow_unicode=True)
 
     def get(self, key: str, default: Optional[_RT] = None) -> _RT:
         return self.read_config().get(key, default)

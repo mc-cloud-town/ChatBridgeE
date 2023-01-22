@@ -143,7 +143,6 @@ class BaseServer(PluginMixin):
 
         @sio_server.event
         async def connect(sid: str, _, auth: Any) -> None:
-            print(auth)
             try:
                 if not (user := self.check_user(auth["name"], auth["password"])):
                     log.info(f"客戶端登入失敗 {auth['name']}")
