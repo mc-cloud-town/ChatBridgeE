@@ -31,7 +31,7 @@ class Config:
 
         if not filepath.is_file() or replay:
             with filepath.open("w", encoding="UTF-8") as f:
-                log.info("正在嘗試生成設定檔...", self.default_config)
+                log.info(f"正在嘗試生成設定檔... {self.default_config}")
                 if self.config_type == "json":
                     json.dump(self.default_config, f, ensure_ascii=False, indent=2)
                 elif self.config_type == "yaml":

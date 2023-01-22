@@ -18,6 +18,7 @@ class BasePlugin_Commands(BasePlugin, description="指令處理"):
             "plugin add",
             "plugin remove",
             "plugin reload",
+            "send all",
         )
 
         self.server.command_manager.add_commands(commands)
@@ -81,6 +82,14 @@ class BasePlugin_Commands(BasePlugin, description="指令處理"):
 
         await self.on_command_plugin_remove(name)
         await self.on_command_plugin_add(name)
+
+    @Plugin.listener()
+    async def on_command_send_all(self, message: str = MISSING):
+        if message is MISSING:
+            print("請輸入訊息")
+            return
+
+        self.server.sio_server.emit("message", message)
 
 
 def setup(server: BaseServer):

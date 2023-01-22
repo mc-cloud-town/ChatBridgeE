@@ -142,28 +142,30 @@ class BaseServer(PluginMixin):
         sio_server = self.sio_server
 
         @sio_server.event
-        async def on_connect(sid: str, _, auth: Any) -> None:
+        async def connect(sid: str, _, auth: Any) -> None:
+            print(auth)
             try:
                 if not (user := self.check_user(auth["name"], auth["password"])):
-                    log.info("客戶端登入失敗", auth["name"])
+                    log.info(f"客戶端登入失敗 {auth['name']}")
                     raise PermissionError
             except (TypeError, KeyError, PermissionError):
-                log.info("客戶端登入失敗", sid)
+                log.info(f"客戶端登入失敗 {sid}")
+                await self.sio_server.emit("error", "登入失敗", room=sid)
                 await self.sio_server.disconnect(sid)
                 return
-
+            self.log.info(f"客戶端登入成功 {user['name']}")
             self.clients[sid] = (ctx := self.get_context(sid, user))
             self.dispatch("connect", ctx, auth)
 
         @sio_server.event
-        async def on_disconnect(sid: str) -> None:
+        async def disconnect(sid: str) -> None:
             if (client := self.clients.pop(sid, None)) is None:
                 return
 
             self.dispatch("disconnect", client)
 
         @sio_server.on("*")
-        async def on_else_event(event_name: str, sid: str, data: Any) -> None:
+        async def else_event(event_name: str, sid: str, data: Any) -> None:
             log.debug(f"收到從 {sid} 發送的事件 {event_name}")
             args = [data]
 
