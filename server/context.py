@@ -38,6 +38,11 @@ class Context:
             **kwargs,
         )
 
+    async def send(
+        self,
+    ) -> None:
+        await self.server.sio_server.emit("message", {""})
+
     async def disconnect(
         self,
         *,

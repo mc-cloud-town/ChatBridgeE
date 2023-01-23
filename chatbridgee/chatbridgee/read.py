@@ -3,7 +3,7 @@ from mcdreforged.api.all import PluginServerInterface, RText, RColor
 
 from .config import ChatBridgeEConfig
 
-
+# TODO add format event data from config
 class ReadClient:
     def __init__(
         self,

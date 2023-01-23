@@ -35,3 +35,4 @@ flowchart LR
 ## 參考
 
 1. [`discord.py cog load method`](https://github.com/Rapptz/discord.py)
+2. [`carpet-scripts:format function`](https://github.com/gnembon/fabric-carpet/blob/master/docs/scarpet/Full.md#formatcomponents--formatcomponents-)
