@@ -52,7 +52,7 @@ class BasePlugin_Commands(BasePlugin, description="指令處理"):
             print("插件不存在")
             return
         else:
-            self.config.append("stop_plugins", module, only_one=True)
+            self.server_config.append("stop_plugins", module, only_one=True)
             print("插件移除成功")
 
     @Plugin.listener()
@@ -67,7 +67,7 @@ class BasePlugin_Commands(BasePlugin, description="指令處理"):
         except ExtensionAlreadyLoaded:
             print("插劍已經加載, 若要重新加載請使用 plugin reload")
         else:
-            self.config.remove("stop_plugins", module)
+            self.server_config.remove("stop_plugins", module)
 
     @Plugin.listener()
     async def on_command_plugin_reload(self, name: str = MISSING):
@@ -75,7 +75,7 @@ class BasePlugin_Commands(BasePlugin, description="指令處理"):
             self.server.load_plugin(
                 "plugins",
                 recursive=True,
-                block_plugin=self.config.get("stop_plugins"),
+                block_plugin=self.server_config.get("stop_plugins"),
             )
             print("插件重新加載完成")
             return

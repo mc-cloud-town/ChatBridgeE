@@ -7,6 +7,7 @@ from pathlib import Path
 from types import ModuleType
 from typing import TYPE_CHECKING, Any, Callable, ClassVar, Optional, TypeVar
 
+from .core.config import Config
 from .errors import ExtensionAlreadyLoaded, ExtensionNotFound, ExtensionPluginNotFond
 from .utils import MISSING
 
@@ -27,6 +28,7 @@ class PluginMeta(type):
     def __new__(cls: type["PluginMeta"], *args: Any, **kwargs: Any) -> "PluginMeta":
         name, bases, attrs = args
 
+        attrs["__plugin_config__"] = bool(kwargs.get("config", False))
         attrs["__plugin_name__"] = kwargs.pop("name", name)
         attrs["__plugin_description__"] = kwargs.pop(
             "description",
@@ -60,11 +62,18 @@ class Plugin(metaclass=PluginMeta):
     __plugin_name__: ClassVar[str]
     __plugin_description__: ClassVar[str]
     __plugin_events__: ClassVar[dict[str, list[str]]]
+    __plugin_config__: ClassVar[bool]
 
     def __init__(self, server: "BaseServer") -> None:
         self.server = server
-        self.config = server.config
+        self.server_config = server.config
         self.log = server.log
+
+        if self.__plugin_config__:
+            self.config = Config(
+                self.__plugin_name__,
+                self.server.config.get("plugins_path"),
+            )
 
     def _inject(self, server: "BaseServer") -> "Plugin":
         try:
@@ -117,6 +126,10 @@ class Plugin(metaclass=PluginMeta):
             return func
 
         return decorator
+
+    # @property
+    # def _config(self):
+    #     return self._config
 
 
 class PluginMixin:

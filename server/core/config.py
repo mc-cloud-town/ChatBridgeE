@@ -1,7 +1,7 @@
 import json
 import logging
 from pathlib import Path
-from typing import Any, Literal, Optional, TypeVar, TypedDict, Union
+from typing import Any, Generic, Literal, Optional, TypeVar, NamedTuple, Union
 
 import yaml
 
@@ -9,19 +9,41 @@ __all__ = ("Config", "ConfigType")
 
 
 log = logging.getLogger("chat-bridgee")
-_RT = TypeVar("_RT")
+_RT = TypeVar("_RT", bound=NamedTuple)
 
 
-class Config:
+class ConfigType(NamedTuple):
+    stop_plugins: list[str] = "plugins"
+    users: list["UserAuth"] = []
+    plugins_path: str = []
+
+
+class UserAuth(NamedTuple):
+    name: str
+    password: str
+    display_name: str
+
+
+class Config(Generic[_RT]):
     def __init__(
         self,
         config_name: str,
         config_path: Union[str, Path, None] = None,
         config_type: Union[Literal["json"], Literal["yaml"]] = "json",
+        config_struct: Optional[_RT] = None,
+        default_config: Optional[_RT] = None,
     ) -> None:
         self.directory = Path(config_path or "")
         self.config_type = config_type
         self.filepath = self.directory / f"{config_name}.{config_type}"
+
+        if config_struct is None or default_config is None:
+            self.config_struct = ConfigType
+            self.default_config = ConfigType(
+                stop_plugins=[],
+                users=[],
+                plugins_path="plugins",
+            )
 
         self.check_config()
 
@@ -38,7 +60,7 @@ class Config:
                     yaml.dump(self.default_config, f, allow_unicode=False, indent=2)
                 log.info(f"設定檔生成完成，'./{filepath}'")
 
-    def read_config(self) -> "ConfigType":
+    def read_config(self) -> _RT:
         try:
             with self.filepath.open("r", encoding="UTF-8") as f:
                 if self.config_type == "json":
@@ -52,9 +74,9 @@ class Config:
             self.check_config(replay=True)
             return self.read_config()
 
-        return ConfigType(**data)
+        return _RT(**data)
 
-    def write(self, data: "ConfigType") -> None:
+    def write(self, data: _RT) -> None:
         self.check_config()
 
         with self.filepath.open("w", encoding="UTF-8") as f:
@@ -64,7 +86,7 @@ class Config:
                 yaml.dump(data, f, allow_unicode=True)
 
     def get(self, key: str, default: Optional[_RT] = None) -> _RT:
-        return self.read_config().get(key, default)
+        return self.read_config().get(key, default or self.default_config.get(key))
 
     def set(self, key: str, value: Any) -> None:
         data = self.read_config()
@@ -91,22 +113,3 @@ class Config:
             pass
         else:
             self.set(key, data)
-
-    @classmethod
-    @property
-    def default_config(self) -> "ConfigType":
-        return ConfigType(
-            stop_plugins=[],
-            users=[],
-        )
-
-
-class ConfigType(TypedDict):
-    stop_plugins: list[str]
-    users: list["UserAuth"]
-
-
-class UserAuth(TypedDict):
-    name: str
-    password: str
-    display_name: str
