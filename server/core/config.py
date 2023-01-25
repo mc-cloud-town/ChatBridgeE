@@ -74,7 +74,7 @@ class Config(Generic[_RT]):
             self.check_config(replay=True)
             return self.read_config()
 
-        return _RT(**data)
+        return dict(**data)
 
     def write(self, data: _RT) -> None:
         self.check_config()

@@ -34,8 +34,8 @@ reference:
 https://github.com/gnembon/fabric-carpet/blob/master/docs/scarpet/Full.md#formatcomponents--formatcomponents-
 """
 
-from enum import Enum
 import json
+from enum import Enum
 from typing import Any, Literal, Optional, Union, overload
 
 # TODO use Color from hex(#) #([0-9a-fA-F]{6})

@@ -8,7 +8,6 @@ __all__ = ("Server",)
 class Server(BaseServer):
     def __init__(self):
         super().__init__()
-
         self.load_plugin(
             f"{__package__}.base_plugin",
             recursive=True,
@@ -35,7 +34,9 @@ class Server(BaseServer):
     async def on_player_chat(self, ctx: Context, player_name: str, content: str):
         await ctx.emit(
             "player_chat",
-            ctx.display_name, player_name, content,
+            ctx.display_name,
+            player_name,
+            content,
             skip_sid=ctx.sid,
         )
 
