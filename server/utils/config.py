@@ -1,7 +1,7 @@
 import json
 from abc import ABC
 from pathlib import Path
-from typing import Any, ClassVar, Literal, Optional, Self, Union, get_type_hints
+from typing import Any, ClassVar, Literal, Optional, Union, get_type_hints
 
 import yaml
 from typeguard import check_type
@@ -14,7 +14,7 @@ class Config(ABC):
     __config_path__: ClassVar[Union[str, Path]]
     __config_name__: ClassVar[str]
 
-    def __init__(self, *args, **kwargs: Any) -> None:
+    def __init__(self, **kwargs: Any) -> None:
         cls = self.__class__
         attrs = []
 
@@ -66,11 +66,10 @@ class Config(ABC):
         except AttributeError:
             return default
 
-    def set(self, key: str, value: Any) -> Self:
+    def set(self, key: str, value: Any) -> None:
         if key not in self._attrs:
             raise AttributeError(f"Unknown attribute: {key}")
         setattr(self, key, value)
-        return self
 
     def json(self) -> Union[list, dict]:
         return json.loads(self.json_str())
@@ -80,3 +79,49 @@ class Config(ABC):
 
     def yaml_str(self) -> str:
         return yaml.dump(self.json())
+
+    @classmethod
+    def load(
+        cls,
+        _filetype: Optional[Union[Literal["json"], Literal["yaml"]]] = None,
+        _config_path: Optional[Union[str, Path]] = None,
+        _name: Optional[str] = None,
+        _auto_create: bool = False,
+        **kwargs: Any,
+    ) -> "Config":
+        _config_path = _config_path or cls.__config_path__
+        file_type = _filetype or cls.__config_filetype__
+        path = Path(_config_path) / f"{_name or cls.__config_name__}.{file_type}"
+        print(path)
+
+        if path.is_file():
+            with open(path, "r") as f:
+                if file_type == "json":
+                    return cls(**json.load(f))
+                return cls(**yaml.load(f, Loader=yaml.FullLoader))
+
+        new_data = cls(**kwargs)
+        if _auto_create:
+            new_data.save()
+        return new_data
+
+    def save(
+        self,
+        filetype: Optional[Union[Literal["json"], Literal["yaml"]]] = None,
+        config_path: Optional[Union[str, Path]] = None,
+        name: Optional[str] = None,
+    ) -> None:
+        config_type = filetype or self.__config_filetype__
+        path = (
+            Path(config_path or self.__config_path__)
+            / f"{name or self.__config_name__}.{config_type}"
+        )
+
+        if not (parent := path.parent).is_dir():
+            parent.mkdir(parents=True)
+
+        with open(path, "w") as f:
+            if config_type == "json":
+                json.dump(self, f, default=lambda _: dict(self))
+            else:
+                yaml.dump(self.json(), f)

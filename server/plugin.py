@@ -5,9 +5,9 @@ from importlib import machinery as import_machine
 from importlib import util as import_util
 from pathlib import Path
 from types import ModuleType
-from typing import TYPE_CHECKING, Any, Callable, ClassVar, Optional, TypeVar
+from typing import TYPE_CHECKING, Any, Callable, ClassVar, Optional, Self, Type
 
-from .core.config import Config
+from .utils.config import Config
 from .errors import ExtensionAlreadyLoaded, ExtensionNotFound, ExtensionPluginNotFond
 from .utils import MISSING
 
@@ -15,7 +15,6 @@ if TYPE_CHECKING:
     from .core.server import BaseServer, CoroFuncT
 
 __all__ = ("Plugin", "PluginMixin")
-PluginT = TypeVar("PluginT", bound="Plugin")
 
 log = logging.getLogger("chat-bridgee")
 
@@ -28,7 +27,7 @@ class PluginMeta(type):
     def __new__(cls: type["PluginMeta"], *args: Any, **kwargs: Any) -> "PluginMeta":
         name, bases, attrs = args
 
-        attrs["__plugin_config__"] = bool(kwargs.get("config", False))
+        attrs["__plugin_config__"] = kwargs.pop("config", None)
         attrs["__plugin_name__"] = kwargs.pop("name", name)
         attrs["__plugin_description__"] = kwargs.pop(
             "description",
@@ -62,7 +61,7 @@ class Plugin(metaclass=PluginMeta):
     __plugin_name__: ClassVar[str]
     __plugin_description__: ClassVar[str]
     __plugin_events__: ClassVar[dict[str, list[str]]]
-    __plugin_config__: ClassVar[bool]
+    __plugin_config__: ClassVar[Optional[Type[Config]]]
 
     def __init__(self, server: "BaseServer") -> None:
         self.server = server
@@ -70,12 +69,9 @@ class Plugin(metaclass=PluginMeta):
         self.log = server.log
 
         if self.__plugin_config__:
-            self.config = Config(
-                self.__plugin_name__,
-                self.server.config.get("plugins_path"),
-            )
+            self.config = self.__plugin_config__()
 
-    def _inject(self, server: "BaseServer") -> "Plugin":
+    def _inject(self, server: "BaseServer") -> "Self":
         try:
             for name, method_names in self.__plugin_events__.items():
                 for method_name in method_names:
@@ -224,6 +220,7 @@ class PluginMixin:
             spec.loader.exec_module(lib)
         except Exception as e:
             del sys.modules[key]
+            print(e)
             # TODO add error
             return
 

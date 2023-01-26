@@ -15,13 +15,10 @@ class Test(Plugin, config=True):
     def __init__(self, server: BaseServer):
         super().__init__(server)
 
-        intents = Intents.default()
-        intents.message_content = True
-
         # TODO add prefix from config
         self.bot = discord.Bot(
             command_prefix="!!",
-            intents=intents,
+            intents=Intents.all(),
             loop=asyncio.new_event_loop(),
         )
 

@@ -86,7 +86,8 @@ class Config(Generic[_RT]):
                 yaml.dump(data, f, allow_unicode=True)
 
     def get(self, key: str, default: Optional[_RT] = None) -> _RT:
-        return self.read_config().get(key, default or self.default_config.get(key))
+        # self.read_config().get(key, default or self.default_config.get(key))
+        return []
 
     def set(self, key: str, value: Any) -> None:
         data = self.read_config()
