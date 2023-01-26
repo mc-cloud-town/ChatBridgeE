@@ -1,10 +1,20 @@
 import json
 from abc import ABC
-from typing import Any, Optional, Self, get_type_hints
+from pathlib import Path
+from typing import Any, ClassVar, Literal, Optional, Self, Union, get_type_hints
+
+from typeguard import check_type
+import yaml
+
+__all__ = ("Config",)
 
 
 class Config(ABC):
-    def __init__(self, **kwargs: Any) -> None:
+    __config_filetype__: ClassVar[Union[Literal["json"], Literal["yaml"]]]
+    __config_path__: ClassVar[Union[str, Path]]
+    __config_name__: ClassVar[str]
+
+    def __init__(self, *args, **kwargs: Any) -> None:
         cls = self.__class__
         attrs = []
 
@@ -19,9 +29,10 @@ class Config(ABC):
             except AttributeError:
                 if name not in kwargs:
                     raise TypeError(f"Missing argument: {name}")
-                if not isinstance(kwargs.get(name), type):
+                try:
+                    check_type(name, kwargs.get(name), type)
+                except TypeError:
                     raise TypeError(f"Invalid type for argument {name}: {type}")
-
                 setattr(self, name, kwargs.pop(name))
 
         self._attrs = attrs
@@ -29,6 +40,18 @@ class Config(ABC):
 
         if kwargs:
             raise TypeError(f"Unexpected arguments: {','.join(kwargs.keys())}")
+
+    def __init_subclass__(
+        cls,
+        type: Union[Literal["json"], Literal["yaml"]] = "yaml",
+        path: Optional[Union[str, Path]] = None,
+        name: Optional[str] = None,
+    ) -> None:
+        super().__init_subclass__()
+
+        cls.__config_filetype__ = type
+        cls.__config_path__ = path or Path() / "config"
+        cls.__config_name__ = name or cls.__name__
 
     def __iter__(self):
         for key in self._attrs:
@@ -49,13 +72,11 @@ class Config(ABC):
         setattr(self, key, value)
         return self
 
-    def json(self) -> str:
+    def json(self) -> Union[list, dict]:
+        return json.loads(self.json_str())
+
+    def json_str(self) -> str:
         return json.dumps(self, default=lambda _: dict(self))
 
-
-class Test(Config):
-    a: str
-    b: "str" = "b"
-
-
-data = Test(a="c")
+    def yaml_str(self) -> str:
+        return yaml.dump(self.json())
