@@ -69,7 +69,7 @@ class Plugin(metaclass=PluginMeta):
         self.log = server.log
 
         if self.__plugin_config__:
-            self.config = self.__plugin_config__()
+            self.config = self.__plugin_config__.load(_auto_create=True)
 
     def _inject(self, server: "BaseServer") -> "Self":
         try:
@@ -96,10 +96,10 @@ class Plugin(metaclass=PluginMeta):
             except Exception:
                 pass
 
-    def on_load() -> None:
+    def on_load(self) -> None:
         pass
 
-    def on_unload() -> None:
+    def on_unload(self) -> None:
         pass
 
     @classmethod
@@ -233,6 +233,7 @@ class PluginMixin:
             setup(self)
         except Exception as e:
             del sys.modules[key]
+            log.error(f"插劍加載失敗: {e}")
             # TODO add remove from add_plugin call cache
         else:
             self.__extensions[key] = lib

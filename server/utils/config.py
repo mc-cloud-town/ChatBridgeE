@@ -21,7 +21,6 @@ class Config(ABC):
         for name, type in get_type_hints(cls).items():
             if name.startswith("_"):
                 continue
-
             attrs.append(name)
 
             try:
@@ -38,7 +37,7 @@ class Config(ABC):
                     check_type(name, kwargs.get(name), type)
                 except TypeError:
                     raise TypeError(f"Invalid type for argument {name}: {type}")
-                setattr(self, name, kwargs.pop(name))
+            setattr(self, name, kwargs.pop(name))
 
         self._attrs = attrs
         cls.__slots__ = attrs
@@ -88,7 +87,7 @@ class Config(ABC):
     @classmethod
     def load(
         cls,
-        _filetype: Optional[Union[Literal["json"], Literal["yaml"]]] = None,
+        _filetype: Optional[Union[Literal["json"], Literal["yaml"]]] = "yaml",
         _config_path: Optional[Union[str, Path]] = None,
         _name: Optional[str] = None,
         _auto_create: bool = False,

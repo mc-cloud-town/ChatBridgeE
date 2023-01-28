@@ -47,7 +47,11 @@ def main():
                 asyncio.create_task(ser.start()),
             )
 
-    asyncio.run(main())
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        for plugin in ser.plugins.values():
+            plugin.on_unload()
 
 
 if __name__ == "__main__":
