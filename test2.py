@@ -28,7 +28,12 @@ class Config(ABC):
                 getattr(cls, name)
             except AttributeError:
                 if name not in kwargs:
-                    raise TypeError(f"Missing argument: {name}")
+                    try:
+                        check_type(name, None, type)
+                    except TypeError:
+                        raise TypeError(f"Missing argument: {name}")
+                    setattr(self, name, None)
+                    continue
                 try:
                     check_type(name, kwargs.get(name), type)
                 except TypeError:
@@ -92,7 +97,6 @@ class Config(ABC):
         _config_path = _config_path or cls.__config_path__
         file_type = _filetype or cls.__config_filetype__
         path = Path(_config_path) / f"{_name or cls.__config_name__}.{file_type}"
-        print(path)
 
         if path.is_file():
             with open(path, "r") as f:
@@ -129,9 +133,14 @@ class Config(ABC):
 
 class TestConfig(Config):
     a: str
+    b: Optional[str]
 
 
-config = TestConfig.load("json", ".", "test")
-config.save("json")
+# config = TestConfig.load("json", ".", "test")
+# config.save("json")
 
-print(config)
+# print(config)
+
+TestConfig(a="")
+
+print(check_type("b", None, TestConfig.__annotations__["b"]))
