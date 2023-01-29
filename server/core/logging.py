@@ -148,7 +148,7 @@ class LogTimeRotatingFileHandler(BaseRotatingHandler):
 
 
 def init_logging(
-    level: int = logging.INFO,
+    level: int = logging.DEBUG,
     directory: Optional[StrPath] = None,
 ) -> Logger:
     warnings_logger = logging.getLogger("py.warnings")

@@ -1,12 +1,11 @@
-import asyncio
 import threading
 
-from discord import Intents
-import discord
 from discord.errors import LoginFailure
 
 from server import BaseServer, Plugin
 from server.utils.config import Config
+
+from ._client import Bot
 
 
 class DiscordConfig(Config):
@@ -18,12 +17,7 @@ class Test(Plugin, config=DiscordConfig):
     def __init__(self, server: BaseServer):
         super().__init__(server)
 
-        # TODO add prefix from config
-        self.bot = discord.Bot(
-            command_prefix=self.config.get("prefix"),
-            intents=Intents.all(),
-            loop=asyncio.new_event_loop(),
-        )
+        self.bot = Bot(self)
 
     @Plugin.listener()
     async def on_message(self, a, b):

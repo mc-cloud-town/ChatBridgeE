@@ -50,6 +50,7 @@ def main():
     try:
         asyncio.run(main())
     except KeyboardInterrupt:
+        ser.log.info("[red]關閉中請稍後...[/red]")
         for plugin in ser.plugins.values():
             plugin.on_unload()
 
