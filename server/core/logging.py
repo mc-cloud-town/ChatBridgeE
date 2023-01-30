@@ -7,12 +7,8 @@ from logging.handlers import BaseRotatingHandler
 from pathlib import Path
 from typing import Optional, Union
 
-import rich
-from pygments.styles.monokai import MonokaiStyle
 from rich.logging import RichHandler
-from rich.syntax import PygmentsSyntaxTheme
 from rich.text import Text
-from rich.theme import Style, Theme
 
 __all__ = ("init_logging",)
 
@@ -156,38 +152,11 @@ def init_logging(
     log.setLevel(level)
     warnings_logger.setLevel(logging.WARNING)
 
-    shell_formatter = logging.Formatter("{message}", datefmt="[%X]", style="{")
     file_formatter = logging.Formatter(
         "[{asctime}] [{levelname}:{name}]: {message}",
         datefmt="%Y-%m-%d %H:%M:%S",
         style="{",
     )
-    rich_console = rich.get_console()
-    rich_console.push_theme(
-        Theme(
-            {
-                "log.time": Style(dim=True),
-                "logging.level.warning": Style(color="yellow"),
-                "logging.level.critical": Style(color="white", bgcolor="red"),
-                "logging.level.verbose": Style(color="magenta", italic=True, dim=True),
-                "logging.level.trace": Style(color="white", italic=True, dim=True),
-                "repr.number": Style(color="cyan"),
-                "repr.url": Style(
-                    underline=True,
-                    italic=True,
-                    bold=False,
-                    color="cyan",
-                ),
-            }
-        )
-    )
-    shell_handler = RichHandler(
-        markup=True,
-        console=rich_console,
-        tracebacks_theme=(PygmentsSyntaxTheme(MonokaiStyle)),
-    )
-    shell_handler.setLevel(logging.INFO)
-    shell_handler.setFormatter(shell_formatter)
 
     file_handler = LogTimeRotatingFileHandler(
         log.name, markup=True, directory=directory
@@ -196,6 +165,13 @@ def init_logging(
     file_handler.setFormatter(file_formatter)
 
     log.addHandler(file_handler)
-    log.addHandler(shell_handler)
+    log.addHandler(
+        RichHandler(
+            level=logging.INFO,
+            rich_tracebacks=True,
+            log_time_format="[%X]",
+            tracebacks_show_locals=True,
+        )
+    )
 
     return log

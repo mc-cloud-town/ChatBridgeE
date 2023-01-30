@@ -5,6 +5,39 @@ This module provides a way to parse Minecraft chat formatting and colors.
 It also provides a way to convert Minecraft chat formatting and colors to
 ANSI escape sequences.
 
+i - italic
+b - bold
+s - strikethrough
+u - underline
+o - obfuscated
+
+w - White (default)
+y - Yellow
+m - Magenta (light purple)
+r - Red
+c - Cyan (aqua)
+l - Lime
+t - lighT blue
+f - dark grayF (weird Flex, but ok)
+g - Gray
+d - golD
+p - PurPle
+n - browN (dark red)
+q - turQuoise (dark aqua)
+e - grEEn
+v - naVy blue
+k - blaK
+
+^<format> <text> - hover over tooltip text, appearing when hovering with your mouse
+    over the text below.
+?<suggestion>    - command suggestion - a message that will be pasted to chat when text
+    below it is clicked.
+!<message>       - a chat message that will be executed when the text below
+    it is clicked.
+@<url>           - a URL that will be opened when the text below it is clicked.
+&<text>          - a text that will be copied to clipboard when the text below
+    it is clicked.
+
 reference:
 https://github.com/gnembon/fabric-carpet/blob/master/docs/scarpet/Full.md#formatcomponents--formatcomponents-
 """
@@ -89,9 +122,11 @@ def get_chat_component_form_text(msg: str) -> dict:
         if desc.startswith(mark):
             desc = desc[1:]
 
-            event[list(event.keys())[0]]["value"] = text
+            event[list(event.keys())[0]]["value"] = text if mark == "^" else desc[1:]
             style.update(event)
 
+            if mark == "^":
+                return style
             break
 
     return {**style, **parse_style(desc)[0]}
@@ -105,6 +140,17 @@ def get_ansi_console(msg: str) -> tuple[dict, str]:
     text = " ".join(texts)
 
     return f"{parse_style(desc)[1]}{text}\033[0m"
+
+
+def chat_format(*msgs: str):
+    ansi = ""
+    mc = []
+
+    for msg in msgs:
+        ansi += get_ansi_console(msg)
+        mc.append(get_chat_component_form_text(msg))
+
+    return {"mc": mc, "ansi": ansi, "base": "".join(msgs)}
 
 
 def parse_style(desc: str) -> tuple[dict, str]:

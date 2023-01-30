@@ -1,8 +1,7 @@
 import asyncio
 import inspect
 import logging
-import traceback
-from typing import Any, Callable, Coroutine, Optional, TypeVar
+from typing import Any, Callable, Coroutine, Optional, TypeVar, Union, List
 
 from aiohttp import web
 from socketio import AsyncServer
@@ -126,8 +125,7 @@ class BaseServer(PluginMixin):
     # ----- `on_` events -----
 
     async def on_error(self, event_method: str, *args: Any, **kwargs: Any) -> None:
-        log.warn(f"Ignoring exception in {event_method}")
-        traceback.print_exc()
+        log.exception(f"Ignoring exception in {event_method}")
 
     async def on_connect(self, ctx: Context, auth):
         pass
@@ -208,3 +206,25 @@ class BaseServer(PluginMixin):
             pass
 
         return None
+
+    async def emit(
+        self,
+        event: str,
+        *data: Optional[Any],
+        to: Optional[str] = None,
+        room: Optional[str] = None,
+        skip_sid: Optional[Union[List[str], str]] = None,
+        namespace: Optional[str] = None,
+        callback: Optional[Callable[..., Any]] = None,
+        **kwargs: Any,
+    ) -> None:
+        await self.sio_server.emit(
+            event=event,
+            data=data,
+            to=to,
+            room=room,
+            skip_sid=skip_sid if type(skip_sid) is list else [skip_sid],
+            namespace=namespace,
+            callback=callback,
+            **kwargs,
+        )

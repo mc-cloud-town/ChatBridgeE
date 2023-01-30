@@ -72,11 +72,13 @@ class BasePlugin_Commands(BasePlugin, description="指令處理"):
     @Plugin.listener()
     async def on_command_plugin_reload(self, name: str = MISSING):
         if name is MISSING:
-            self.server.load_plugin(
-                "plugins",
-                recursive=True,
-                block_plugin=self.server_config.get("stop_plugins"),
-            )
+            for plugin in self.server.plugins.copy().values():
+                if isinstance(plugin, BasePlugin):
+                    continue
+
+                await self.on_command_plugin_remove(plugin.__module__[8:])
+                await self.on_command_plugin_add(plugin.__module__[8:])
+
             print("插件重新加載完成")
             return
 

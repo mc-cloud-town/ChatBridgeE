@@ -1,18 +1,18 @@
 import asyncio
-import inspect
-import platform
+import json
 from typing import Any, Optional
 
 import discord
 from discord import Intents, Message, TextChannel
 
 from server import Plugin
+from server.utils import chat_format
 
 
 class Bot(discord.Bot):
     def __init__(self, plugin: Plugin):
         super().__init__(
-            command_prefix=self.config.get("prefix"),
+            command_prefix=plugin.config.get("prefix"),
             intents=Intents.all(),
             loop=asyncio.new_event_loop(),
         )
@@ -21,23 +21,47 @@ class Bot(discord.Bot):
         self.log = plugin.log
         self.config = plugin.config
         self.server = plugin.server
+        self.log.info(
+            f"[red]py-cord version: [/red][cyan]{discord.__version__}[/cyan]",
+            extra=dict(markup=True),
+        )
+
+    @property
+    def chat_channels(self) -> list[int]:
+        return self.config.get("chat_channels", [])
 
     async def on_ready(self):
-        self.log.info(f"[cyan]discord 登入 {self.user}[/cyan]")
+        self.log.info(f"[cyan]discord 登入 {self.user}[/cyan]", extra=dict(markup=True))
 
     async def get_reference_message(self, msg: Message) -> Optional[Message]:
         if not msg.reference:
             return None
         return await self.get_or_fetch_message(msg.reference.message_id, msg.channel)
 
-    async def style_message(self, msg: Message) -> dict:
-        ...
+    def style_message(self, msg: Message) -> list:
+        contents = []
+        if msg.content != "":
+            contents.append(f" {msg.content}")
+        if len(msg.attachments) > 0:
+            if msg.content != "":
+                contents.append(" ")
+            contents.append(f"@{msg.jump_url} <打開附件>")
+        return chat_format(*contents)
 
     async def on_message(self, msg: Message):
-        if msg.author == self.user:
+        if msg.author == self.user or msg.channel.id not in self.chat_channels:
             return
-
         self.log.info(f"discord 收到訊息 {msg}")
+
+        if (ref_msg := await self.get_reference_message(msg)) is not None:
+            style = self.style_message(ref_msg)
+            self.log.debug(json.dumps(style["mc"]))
+            self.log.info(style["ansi"])
+        style = self.style_message(msg)
+        self.log.debug(json.dumps(style["mc"]))
+        self.log.info(style["ansi"])
+
+        # await self.server.emit()
 
     async def get_or_fetch_message(
         self,
@@ -52,13 +76,4 @@ class Bot(discord.Bot):
             return None
 
     def run(self, *args: Any, **kwargs: Any):
-        for msg in inspect.cleandoc(
-            f"""
-            [red]python version: [/red][cyan]{platform.python_version()}[/cyan]
-            [red]py-cord version: [/red][cyan]{discord.__version__}[/cyan]
-            [red]bot version: [/red][cyan]{self.__version__}[/cyan]
-            """
-        ).split("\n"):
-            self.log.info(msg)
-
         super().run(*args, **kwargs)

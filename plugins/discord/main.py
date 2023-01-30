@@ -3,7 +3,7 @@ import threading
 from discord.errors import LoginFailure
 
 from server import BaseServer, Plugin
-from server.utils.config import Config
+from server.utils import Config
 
 from ._client import Bot
 
@@ -11,6 +11,7 @@ from ._client import Bot
 class DiscordConfig(Config):
     token: str = "<you discord token here>"
     prefix: str = "!!"
+    chat_channels: list[int] = []
 
 
 class Test(Plugin, config=DiscordConfig):
@@ -34,15 +35,17 @@ class Test(Plugin, config=DiscordConfig):
             except LoginFailure:
                 self.log.error(f"Discord Token 錯誤, 請在 {config_path} 中修改 token 的值")
                 self.server.unload_extension(self.__module__)
+            except (RuntimeError, AssertionError):
+                pass
 
         threading.Thread(target=start).start()
 
-    def on_unload(self) -> None:
+    def on_unload_before(self):
         async def close():
             try:
                 await self.bot.close()
             except Exception as e:
-                ...
+                pass
 
         self.bot.loop.create_task(close())
 

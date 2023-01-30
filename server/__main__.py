@@ -1,4 +1,5 @@
 import asyncio
+import platform
 
 from prompt_toolkit import PromptSession
 from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
@@ -10,7 +11,11 @@ from .core.command import CommandCompleter
 
 
 def main():
-    init_logging()
+    log = init_logging()
+    log.info(
+        f"[red]python version: [/red][cyan]{platform.python_version()}[/cyan]",
+        extra=dict(markup=True),
+    )
 
     ser = Server()
 
@@ -50,9 +55,9 @@ def main():
     try:
         asyncio.run(main())
     except KeyboardInterrupt:
-        ser.log.info("[red]關閉中請稍後...[/red]")
-        for plugin in ser.plugins.values():
-            plugin.on_unload()
+        ser.log.info("[red]關閉中請稍後...[/red]", extra=dict(markup=True))
+        for name in ser.plugins.copy().keys():
+            ser.remove_plugin(name)
 
 
 if __name__ == "__main__":

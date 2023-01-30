@@ -87,6 +87,12 @@ class Plugin(metaclass=PluginMeta):
 
     def _eject(self, server: "BaseServer") -> None:
         try:
+            self.on_unload_before()
+        except Exception as e:
+            log.error(f"插劍 {self.__plugin_name__} on_unload_before 出錯: {e}")
+            pass
+
+        try:
             for method_names in self.__plugin_events__.values():
                 for method_name in method_names:
                     server.remove_listener(getattr(self, method_name))
@@ -100,6 +106,9 @@ class Plugin(metaclass=PluginMeta):
         pass
 
     def on_unload(self) -> None:
+        pass
+
+    def on_unload_before(self) -> None:
         pass
 
     @classmethod
@@ -220,8 +229,7 @@ class PluginMixin:
             spec.loader.exec_module(lib)
         except Exception as e:
             del sys.modules[key]
-            print(e)
-            # TODO add error
+            log.exception("Error loading extension")
             return
 
         if (setup := getattr(lib, "setup", None)) is None:
@@ -234,7 +242,7 @@ class PluginMixin:
         except Exception as e:
             del sys.modules[key]
             log.error(f"插劍加載失敗: {e}")
-            # TODO add remove from add_plugin call cache
+            log.exception("Error loading extension")
         else:
             self.__extensions[key] = lib
 
