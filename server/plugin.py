@@ -132,10 +132,6 @@ class Plugin(metaclass=PluginMeta):
 
         return decorator
 
-    # @property
-    # def _config(self):
-    #     return self._config
-
 
 class PluginMixin:
     def __init__(self, *args, **kwargs) -> None:
@@ -177,6 +173,15 @@ class PluginMixin:
             raise ExtensionNotFound(name)
 
         self._remove_module_references(module.__name__)
+        self._module_finalizer(module, name)
+
+    def _module_finalizer(self, lib: ModuleType, key: str) -> None:
+        self.__extensions.pop(key, None)
+        sys.modules.pop(key, None)
+        name = lib.__name__
+        for module in list(sys.modules.keys()):
+            if _is_submodule(name, module):
+                del sys.modules[module]
 
     def _remove_module_references(self, name: str) -> None:
         for plugin_name, plugin in self.__plugins.copy().items():

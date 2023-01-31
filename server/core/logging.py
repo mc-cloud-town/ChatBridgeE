@@ -61,8 +61,8 @@ class LogTimeRotatingFileHandler(BaseRotatingHandler):
             try:
                 record = copy.deepcopy(record)
                 record.msg = Text.from_markup(record.msg)
-            except Exception as e:  # fix: aiohttp throw errors
-                log.debug(e)
+            except Exception:
+                pass
 
         return (self.formatter or Formatter()).format(record)
 
@@ -170,7 +170,7 @@ def init_logging(
             level=logging.INFO,
             rich_tracebacks=True,
             log_time_format="[%X]",
-            tracebacks_show_locals=True,
+            # tracebacks_show_locals=True,
         )
     )
 
