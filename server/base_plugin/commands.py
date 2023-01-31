@@ -12,20 +12,6 @@ log = logging.getLogger("chat-bridgee")
 
 
 class BasePlugin_Commands(BasePlugin, description="指令處理"):
-    def on_load(self) -> None:
-        commands = (
-            "plugin list",
-            "plugin add",
-            "plugin remove",
-            "plugin reload",
-            "send all",
-        )
-
-        self.server.command_manager.add_commands(commands)
-
-    def on_unload(self) -> None:
-        pass
-
     @Plugin.listener()
     async def on_command_plugin_list(self):
         table = Table(show_header=False, show_lines=True, header_style="bold magenta")

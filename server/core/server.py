@@ -44,6 +44,9 @@ class BaseServer(PluginMixin):
         if not asyncio.iscoroutinefunction(func):
             raise TypeError("Listeners must be coroutines")
 
+        if name.startswith("on_command_"):
+            self.command_manager.add_command(" ".join(name.split("_")[2:]))
+
         if name in self.extra_events:
             self.extra_events[name].append(func)
         else:
@@ -52,6 +55,11 @@ class BaseServer(PluginMixin):
     def remove_listener(self, func: CoroFunc, name: str = MISSING) -> None:
         name = func.__name__ if name is MISSING else name
 
+        # remove command
+        if name.startswith("on_command_"):
+            self.command_manager.remove_command(" ".join(name.split("_")[2:]))
+
+        # remove event
         if name in self.extra_events:
             try:
                 self.extra_events[name].remove(func)
