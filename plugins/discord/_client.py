@@ -40,10 +40,10 @@ class Bot(discord.Bot):
 
     def style_message(self, msg: Message) -> list:
         contents = []
-        if msg.content != "":
-            contents.append(f" {msg.content}")
+        if (content := msg.content) != "":
+            contents.append(("" if content.startswith("\\:") else " ") + content)
         if len(msg.attachments) > 0:
-            if msg.content != "":
+            if content != "":
                 contents.append(" ")
             contents.append(f"@{msg.jump_url} <打開附件>")
         return chat_format(*contents)
