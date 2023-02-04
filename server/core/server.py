@@ -1,5 +1,6 @@
 import asyncio
 import inspect
+import json
 import logging
 from typing import Any, Callable, Coroutine, Optional, TypeVar, Union, List
 
@@ -229,6 +230,31 @@ class BaseServer(PluginMixin):
         await self.sio_server.emit(
             event=event,
             data=data,
+            to=to,
+            room=room,
+            skip_sid=skip_sid if type(skip_sid) is list else [skip_sid],
+            namespace=namespace,
+            callback=callback,
+            **kwargs,
+        )
+
+    async def send(
+        self,
+        msg: Union[str, Any],
+        to: Optional[str] = None,
+        room: Optional[str] = None,
+        skip_sid: Optional[Union[List[str], str]] = None,
+        namespace: Optional[str] = None,
+        callback: Optional[Callable[..., Any]] = None,
+        **kwargs: Any,
+    ):
+        if type(msg) is str:
+            style = self.style_message(msg)
+            msg = {"ansi": style["ansi"], "mc": json.dumps(style["mc"])}
+
+        self.sio_server.emit(
+            event="chat",
+            data=msg,
             to=to,
             room=room,
             skip_sid=skip_sid if type(skip_sid) is list else [skip_sid],

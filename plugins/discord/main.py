@@ -14,7 +14,7 @@ class DiscordConfig(Config):
     chat_channels: list[int] = []
 
 
-class Test(Plugin, config=DiscordConfig):
+class Discord(Plugin, config=DiscordConfig):
     def __init__(self, server: BaseServer):
         super().__init__(server)
 
@@ -44,11 +44,11 @@ class Test(Plugin, config=DiscordConfig):
         async def close():
             try:
                 await self.bot.close()
-            except Exception as e:
+            except Exception:
                 pass
 
         self.bot.loop.create_task(close())
 
 
 def setup(server: BaseServer):
-    server.add_plugin(Test(server))
+    server.add_plugin(Discord(server))

@@ -57,11 +57,8 @@ class Bot(discord.Bot):
             style = self.style_message(ref_msg)
             self.log.debug(json.dumps(style["mc"]))
             self.log.info(style["ansi"])
-        style = self.style_message(msg)
-        self.log.debug(json.dumps(style["mc"]))
-        self.log.info(style["ansi"])
 
-        # await self.server.emit()
+        await self.server.send("chat")
 
     async def get_or_fetch_message(
         self,
