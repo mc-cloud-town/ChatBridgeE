@@ -1,3 +1,4 @@
+from typing import Optional
 import socketio
 from mcdreforged.api.all import PluginServerInterface, RText, RColor
 
@@ -18,7 +19,7 @@ class ReadClient:
         self.sio.on("chat", self.on_chat)
         # self.sio.on("new_connect", self.on_new_connect)
         # self.sio.on("new_disconnect", self.on_new_disconnect)
-        # self.sio.on("server_startup", self.on_server_startup)
+        self.sio.on("server_startup", self.on_server_startup)
         self.sio.on("server_start", self.on_server_start)
         self.sio.on("server_stop", self.on_server_stop)
         self.sio.on("player_chat", self.on_player_chat)
@@ -37,8 +38,8 @@ class ReadClient:
     # def on_new_disconnect(self, server_name: str) -> None:
     #     print(server_name)
 
-    # def on_server_startup(self, server_name: str) -> None:
-    #     self.from_server(server_name, "啟動中...")
+    def on_server_startup(self, server_name: str) -> None:
+        self.from_server(server_name, "啟動中...")
 
     def on_server_start(self, server_name: str) -> None:
         self.from_server(server_name, "啟動完成")
@@ -62,6 +63,53 @@ class ReadClient:
             f"{player_name} 離開了 {server_name}",
             set_start=False,
         )
+
+    # stats:
+    #   success>
+    #     code: 0
+    #   unknown stat>
+    #     code: 1
+    #   no stats_helper>
+    #     code: 2
+    #
+    # <unknown command>
+    #   code: -1
+    def on_command(self, command: str):
+        if command.startswith("!!stats "):
+            try:
+                import stats_helper
+            except (ImportError, ModuleNotFoundError):
+                result = {"code": 2}
+            else:
+                try:
+                    _, type, cls, target = (
+                        command.replace("-bot", "").replace("-all", "").split()
+                    )
+                except:  # noqa: E722
+                    res_raw: Optional[str] = None
+                else:
+                    res_raw = stats_helper.show_rank(
+                        self.server.get_plugin_command_source(),
+                        cls,
+                        target,
+                        list_bot="-bot" in command,
+                        is_tell=False,
+                        is_all="-all" in command,
+                        is_called=True,
+                    )
+
+                if res_raw is not None:
+                    lines = res_raw.splitlines()
+                    result = {
+                        "code": 0,
+                        "stats_name": lines[0],
+                        "data": lines[1:-1],
+                        "total": int(lines[-1].split(" ")[1]),
+                    }
+                else:
+                    result = {"code": 1}
+
+        self.sio.call("command_callback", result)
 
     def from_server(
         self,

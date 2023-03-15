@@ -2,6 +2,7 @@ import asyncio
 import inspect
 import json
 import logging
+import os
 from typing import Any, Callable, Coroutine, Optional, TypeVar, Union, List
 
 from aiohttp import web
@@ -186,10 +187,11 @@ class BaseServer(PluginMixin):
     async def start(self) -> web.AppRunner:
         runner = web.AppRunner(self.app)
         await runner.setup()
-        site = web.TCPSite(runner, "localhost", 8080)
+        port = int(self.config.get("port") or os.getenv("PORT") or 8080)
+        site = web.TCPSite(runner, "localhost", port)
         await site.start()
 
-        print("======= Serving on http://127.0.0.1:8080/ ======")
+        print(f"======= Serving on http://127.0.0.1:{port}/ ======")
 
         return runner
 

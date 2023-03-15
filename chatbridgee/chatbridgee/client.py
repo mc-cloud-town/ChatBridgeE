@@ -1,7 +1,9 @@
 from pathlib import Path
+import time
 from typing import Union
 
 import socketio
+from socketio import exceptions
 from mcdreforged.api.all import (
     CommandSource,
     Info,
@@ -69,14 +71,21 @@ def on_load(server: PluginServerInterface, old_module):
     @new_thread("chatbridge-start")
     def start():
         auth = config.client_info
-        sio.connect(
-            f"http://{config.server_address}",
-            auth={
-                "name": auth.name,
-                "password": auth.password,
-            },
-        )
-        sio.wait()
+        try:
+            sio.connect(
+                f"http://{config.server_address}",
+                auth={
+                    "name": auth.name,
+                    "password": auth.password,
+                },
+            )
+            sio.wait()
+        except exceptions.ConnectionError:
+            server.logger.error(
+                f"Unable to connect to server {config.server_address}\n"
+                "Will try again in 10s"
+            )
+            time.sleep(10)
 
     start()
 
