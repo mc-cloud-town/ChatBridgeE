@@ -22,6 +22,7 @@ class Discord(Plugin, config=DiscordConfig):
 
     @Plugin.listener()
     async def on_message(self, a, b):
+        # TODO
         print(a, b)
         print("----------------------------------------")
 

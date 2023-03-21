@@ -153,7 +153,6 @@ class BaseServer(PluginMixin):
         @sio_server.event
         async def connect(sid: str, _, auth: Any) -> None:
             try:
-                print(self.check_user(auth["name"], auth["password"]))
                 if not (user := self.check_user(auth["name"], auth["password"])):
                     log.info(f"客戶端登入失敗 {auth['name']}")
                     raise PermissionError
@@ -241,17 +240,22 @@ class BaseServer(PluginMixin):
 
     async def send(
         self,
-        msg: Union[str, Any],
+        msg: Union[str, FormatMessage, Any],
         to: Optional[str] = None,
         room: Optional[str] = None,
         skip_sid: Optional[Union[List[str], str]] = None,
         namespace: Optional[str] = None,
         callback: Optional[Callable[..., Any]] = None,
+        format: Optional[bool] = True,
         **kwargs: Any,
     ):
-        if type(msg) is str:
-            msg = FormatMessage(msg).__dict__
-            self.log.debug(msg)
+        if isinstance(msg, str) and format:
+            msg = FormatMessage(msg)
+        elif isinstance(msg, (list, tuple)):
+            msg = FormatMessage(*msg)
+
+        if isinstance(msg, FormatMessage):
+            msg = msg.__dict__
 
         await self.sio_server.emit(
             event="chat",

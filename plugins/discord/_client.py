@@ -1,12 +1,10 @@
 import asyncio
-import json
 from typing import Any, Optional
 
 import discord
 from discord import Intents, Message, TextChannel
 
 from server import Plugin
-from server.utils import FormatMessage
 
 
 class Bot(discord.Bot):
@@ -38,34 +36,45 @@ class Bot(discord.Bot):
             return None
         return await self.get_or_fetch_message(msg.reference.message_id, msg.channel)
 
-    def style_message(self, msg: Message) -> FormatMessage:
+    def style_message(self, msg: Message) -> str:
         contents = []
-        if (content := msg.content) != "":
+        if content := msg.content:
             contents.append(("" if content.startswith("\\:") else " ") + content)
         if len(msg.attachments) > 0:
-            if content != "":
-                contents.append(" ")
-            contents.append(f"@{msg.jump_url} <打開附件>")
-        return FormatMessage(*contents)
+            contents.append(f" @{msg.jump_url} <打開附件>")
+        return " ".join(contents)
 
     async def on_message(self, msg: Message):
         if msg.author == self.user or msg.channel.id not in self.chat_channels:
             return
         self.log.info(f"discord 收到訊息 {msg}")
-
         if (ref_msg := await self.get_reference_message(msg)) is not None:
             style = self.style_message(ref_msg)
-            self.log.debug(json.dumps(style.mc))
-            self.log.info(style.ansi)
+            print(style)
+            ref_author = ref_msg.author
+            # ┌─回覆自 <XX> XX
+            await self.server.send(
+                [
+                    "g ┌─回覆自 <",
+                    "c " + (ref_author.nick or ref_author.name),
+                    f"g >{self.style_message(ref_msg)}\n",
+                ]
+            )
 
-        await self.server.send("chat")
+        author = msg.author
+        content = ["g [", "c DC", "g ] "]
+        content += ["g <", "c " + (author.nick or author.name), "g > "]
+        content.append(self.style_message(msg))
+
+        # [DC] <XX> XX
+        await self.server.send(content)
 
     async def get_or_fetch_message(
         self,
         id: int,
         channel: TextChannel,
     ) -> Optional[Message]:
-        if (message := self.get_message(channel, id)) is not None:
+        if (message := self.get_message(id)) is not None:
             return message
         try:
             return await channel.fetch_message(id)

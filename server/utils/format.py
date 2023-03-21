@@ -43,7 +43,7 @@ https://github.com/gnembon/fabric-carpet/blob/master/docs/scarpet/Full.md#format
 """
 from enum import Enum
 import json
-from typing import Optional
+from typing import Optional, Union
 
 
 class ChatFormatting(Enum):
@@ -102,13 +102,18 @@ class ChatFormatting(Enum):
 
 
 class FormatMessage:
-    def __init__(self, *msgs: str) -> None:
+    def __init__(self, *msgs: Union[str, "FormatMessage"]) -> None:
         self.original_msgs = msgs
 
         ansi, mc = "", []
         for msg in msgs:
-            ansi += get_ansi_console(msg)
-            mc.append(get_chat_component_form_text(msg))
+            if not isinstance(msg, FormatMessage):
+                ansi += get_ansi_console(msg)
+                mc.append(get_chat_component_form_text(msg))
+                continue
+
+            ansi += msg.ansi
+            mc.append(msg.mc)
 
         self.ansi, self.mc = ansi, mc
 
