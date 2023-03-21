@@ -42,6 +42,7 @@ reference:
 https://github.com/gnembon/fabric-carpet/blob/master/docs/scarpet/Full.md#formatcomponents--formatcomponents-
 """
 from enum import Enum
+import json
 from typing import Optional
 
 
@@ -100,6 +101,21 @@ class ChatFormatting(Enum):
         return [f for f in cls if not f.is_format]
 
 
+class FormatMessage:
+    def __init__(self, *msgs: str) -> None:
+        self.original_msgs = msgs
+
+        ansi, mc = "", []
+        for msg in msgs:
+            ansi += get_ansi_console(msg)
+            mc.append(get_chat_component_form_text(msg))
+
+        self.ansi, self.mc = ansi, mc
+
+    def json(self):
+        return json.dumps(self.__dict__)
+
+
 def split_desc_text(msg: str) -> tuple[str, str]:
     if msg.startswith(" "):
         msg = f"w{msg}"
@@ -140,17 +156,6 @@ def get_ansi_console(msg: str) -> tuple[dict, str]:
     text = " ".join(texts)
 
     return f"{parse_style(desc)[1]}{text}\033[0m"
-
-
-def chat_format(*msgs: str):
-    ansi = ""
-    mc = []
-
-    for msg in msgs:
-        ansi += get_ansi_console(msg)
-        mc.append(get_chat_component_form_text(msg))
-
-    return {"mc": mc, "ansi": ansi, "base": "".join(msgs)}
 
 
 def parse_style(desc: str) -> tuple[dict, str]:

@@ -77,7 +77,7 @@ class BasePlugin_Commands(BasePlugin, description="指令處理"):
             print("請輸入訊息")
             return
 
-        self.server.sio_server.emit("message", message)
+        await self.server.sio_server.emit("message", message)
 
 
 def setup(server: BaseServer):

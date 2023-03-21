@@ -36,7 +36,7 @@ async def disconnect():
 
 
 async def main():
-    await sio.connect("http://localhost:8080", auth={"name": "test", "password": "awa"})
+    await sio.connect("http://localhost:8081", auth={"name": "test", "password": "awa"})
     await sio.wait()
 
 

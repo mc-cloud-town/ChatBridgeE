@@ -6,7 +6,7 @@ import discord
 from discord import Intents, Message, TextChannel
 
 from server import Plugin
-from server.utils import chat_format
+from server.utils import FormatMessage
 
 
 class Bot(discord.Bot):
@@ -38,7 +38,7 @@ class Bot(discord.Bot):
             return None
         return await self.get_or_fetch_message(msg.reference.message_id, msg.channel)
 
-    def style_message(self, msg: Message) -> list:
+    def style_message(self, msg: Message) -> FormatMessage:
         contents = []
         if (content := msg.content) != "":
             contents.append(("" if content.startswith("\\:") else " ") + content)
@@ -46,7 +46,7 @@ class Bot(discord.Bot):
             if content != "":
                 contents.append(" ")
             contents.append(f"@{msg.jump_url} <打開附件>")
-        return chat_format(*contents)
+        return FormatMessage(*contents)
 
     async def on_message(self, msg: Message):
         if msg.author == self.user or msg.channel.id not in self.chat_channels:
@@ -55,8 +55,8 @@ class Bot(discord.Bot):
 
         if (ref_msg := await self.get_reference_message(msg)) is not None:
             style = self.style_message(ref_msg)
-            self.log.debug(json.dumps(style["mc"]))
-            self.log.info(style["ansi"])
+            self.log.debug(json.dumps(style.mc))
+            self.log.info(style.ansi)
 
         await self.server.send("chat")
 

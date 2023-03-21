@@ -1,12 +1,13 @@
 import asyncio
 import inspect
-import json
 import logging
 import os
 from typing import Any, Callable, Coroutine, Optional, TypeVar, Union, List
 
 from aiohttp import web
 from socketio import AsyncServer
+
+from server.utils.format import FormatMessage
 
 from ..context import Context
 from ..plugin import PluginMixin
@@ -152,6 +153,7 @@ class BaseServer(PluginMixin):
         @sio_server.event
         async def connect(sid: str, _, auth: Any) -> None:
             try:
+                print(self.check_user(auth["name"], auth["password"]))
                 if not (user := self.check_user(auth["name"], auth["password"])):
                     log.info(f"客戶端登入失敗 {auth['name']}")
                     raise PermissionError
@@ -160,7 +162,7 @@ class BaseServer(PluginMixin):
                 await self.sio_server.emit("error", "登入失敗", room=sid)
                 await self.sio_server.disconnect(sid)
                 return
-            self.log.info(f"客戶端登入成功 {user['name']}")
+            self.log.info(f"客戶端登入成功 {user.name}")
             self.clients[sid] = (ctx := self.get_context(sid, user))
             self.dispatch("connect", ctx, auth)
 
@@ -187,7 +189,7 @@ class BaseServer(PluginMixin):
     async def start(self) -> web.AppRunner:
         runner = web.AppRunner(self.app)
         await runner.setup()
-        port = int(self.config.get("port") or os.getenv("PORT") or 8080)
+        port = int(self.config.get("port") or os.getenv("PORT") or 8081)
         site = web.TCPSite(runner, "localhost", port)
         await site.start()
 
@@ -203,11 +205,8 @@ class BaseServer(PluginMixin):
 
     def check_user(self, name: str, password: str) -> Optional[UserAuth]:
         users = self.config.get("users", {})
-
         try:
-            if (user := dict(users.get(name))) is not None and user.get(
-                "password"
-            ) == password:
+            if (user := users.get(name)) and user.get("password") == password:
                 return UserAuth(
                     name=name,
                     password=password,
@@ -251,10 +250,10 @@ class BaseServer(PluginMixin):
         **kwargs: Any,
     ):
         if type(msg) is str:
-            style = self.style_message(msg)
-            msg = {"ansi": style["ansi"], "mc": json.dumps(style["mc"])}
+            msg = FormatMessage(msg).__dict__
+            self.log.debug(msg)
 
-        self.sio_server.emit(
+        await self.sio_server.emit(
             event="chat",
             data=msg,
             to=to,

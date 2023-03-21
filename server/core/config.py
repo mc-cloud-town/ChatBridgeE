@@ -1,7 +1,7 @@
 import json
 import logging
 from pathlib import Path
-from typing import Any, Generic, Literal, Optional, TypeVar, NamedTuple, Union
+from typing import Any, Dict, Generic, Literal, Optional, TypeVar, NamedTuple, Union
 
 import yaml
 
@@ -10,18 +10,19 @@ __all__ = ("Config", "ConfigType")
 
 log = logging.getLogger("chat-bridgee")
 _RT = TypeVar("_RT", bound=NamedTuple)
+_T = TypeVar("_T")
 
 
 class ConfigType(NamedTuple):
     stop_plugins: list[str] = "plugins"
-    users: list["UserAuth"] = []
+    users: Dict[str, "UserAuth"] = {}
     plugins_path: str = []
 
 
 class UserAuth(NamedTuple):
     name: str
     password: str
-    display_name: str
+    display_name: Optional[str]
 
 
 class Config(Generic[_RT]):
@@ -41,7 +42,7 @@ class Config(Generic[_RT]):
             self.config_struct = ConfigType
             self.default_config = ConfigType(
                 stop_plugins=[],
-                users=[],
+                users={},
                 plugins_path="plugins",
             )
 
@@ -60,7 +61,7 @@ class Config(Generic[_RT]):
                     yaml.dump(self.default_config, f, allow_unicode=False, indent=2)
                 log.info(f"設定檔生成完成，'./{filepath}'")
 
-    def read_config(self) -> _RT:
+    def read_config(self) -> dict:
         try:
             with self.filepath.open("r", encoding="UTF-8") as f:
                 if self.config_type == "json":
@@ -85,9 +86,11 @@ class Config(Generic[_RT]):
             elif self.config_type == "yaml":
                 yaml.dump(data, f, allow_unicode=True)
 
-    def get(self, key: str, default: Optional[_RT] = None) -> _RT:
-        # self.read_config().get(key, default or self.default_config.get(key))
-        return []
+    def get(self, key: str, default: Optional[_T] = None) -> _T:
+        return self.read_config().get(
+            key,
+            default or self.default_config._field_defaults.get(key),
+        )
 
     def set(self, key: str, value: Any) -> None:
         data = self.read_config()

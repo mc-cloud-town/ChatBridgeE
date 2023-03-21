@@ -21,7 +21,7 @@ class ChatBridgeEConfig(Serializable):
     name: str = "ClientName"
     password: str = "ClientPassword"
     server_hostname: str = "127.0.0.1"
-    server_port: int = 8080
+    server_port: int = 8081
 
     @property
     def client_info(self) -> ClientInfo:

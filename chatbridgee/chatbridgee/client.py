@@ -74,10 +74,7 @@ def on_load(server: PluginServerInterface, old_module):
         try:
             sio.connect(
                 f"http://{config.server_address}",
-                auth={
-                    "name": auth.name,
-                    "password": auth.password,
-                },
+                auth={"name": auth.name, "password": auth.password},
             )
             sio.wait()
         except exceptions.ConnectionError:
@@ -86,6 +83,7 @@ def on_load(server: PluginServerInterface, old_module):
                 "Will try again in 10s"
             )
             time.sleep(10)
+            start()
 
     start()
 
