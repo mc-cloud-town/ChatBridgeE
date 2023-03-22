@@ -198,7 +198,6 @@ class PluginMixin:
         self,
         name: str,
         package: Optional[str] = None,
-        recursive: bool = False,
         block_plugin: list[str] = [],
     ) -> None:
         name = self._resolve_name(name, package)
@@ -212,9 +211,11 @@ class PluginMixin:
             self._load_from_module_spec(spec, name)
         else:
             path = Path(*name.split("."))
-            glob_mod = path.rglob if recursive else path.glob
 
-            for file in glob_mod("[!_]*.py"):
+            for file in path.glob("[!_]*.pyz"):
+                ...
+
+            for file in path.glob("[!_]*.py"):
                 pa = ".".join([*file.parts[:-1], file.stem])
                 if pa in block_plugin:
                     continue
@@ -222,7 +223,6 @@ class PluginMixin:
                 self.load_plugin(
                     pa,
                     package=package,
-                    recursive=recursive,
                     block_plugin=block_plugin,
                 )
 
