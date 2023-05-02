@@ -1,14 +1,20 @@
+import importlib
 import inspect
 import logging
 import sys
-from importlib import machinery as import_machine
 from importlib import util as import_util
 from pathlib import Path
 from types import ModuleType
 from typing import TYPE_CHECKING, Any, Callable, ClassVar, Optional, Self, Type
 
 from .utils.config import Config
-from .errors import ExtensionAlreadyLoaded, ExtensionNotFound, ExtensionPluginNotFond
+from .errors import (
+    ExtensionAlreadyLoaded,
+    ExtensionError,
+    ExtensionNotFound,
+    ExtensionPluginNotFond,
+    NoEntryPointError,
+)
 from .utils import MISSING
 
 if TYPE_CHECKING:
@@ -172,21 +178,23 @@ class PluginMixin:
         if (module := self.__extensions.pop(name, None)) is None:
             raise ExtensionNotFound(name)
 
-        self._remove_module_references(module.__name__)
+        for plugin_name, plugin in self.__plugins.copy().items():
+            if _is_submodule(module.__name__, plugin.__module__):
+                self.remove_plugin(plugin_name)
+
         self._module_finalizer(module, name)
 
     def _module_finalizer(self, lib: ModuleType, key: str) -> None:
         self.__extensions.pop(key, None)
         sys.modules.pop(key, None)
-        name = lib.__name__
-        for module in list(sys.modules.keys()):
-            if _is_submodule(name, module):
-                del sys.modules[module]
 
-    def _remove_module_references(self, name: str) -> None:
-        for plugin_name, plugin in self.__plugins.copy().items():
-            if _is_submodule(name, plugin.__module__):
-                self.remove_plugin(plugin_name)
+        for module in sys.modules.copy().keys():
+            if _is_submodule(lib.__name__, module):
+                rv = sys.modules.pop(module, None)
+                log.debug(
+                    f"Remove module {module} when unloading plugin {repr(self)}, "
+                    f"success={rv}"
+                )
 
     def _resolve_name(self, name: str, package: Optional[str]) -> str:
         try:
@@ -208,48 +216,51 @@ class PluginMixin:
         elif (spec := import_util.find_spec(name)) is None:
             raise ExtensionPluginNotFond(name)
         elif spec.has_location:
-            self._load_from_module_spec(spec, name)
+            lib = import_util.module_from_spec(spec)
+            sys.modules[name] = lib
+
+            try:
+                spec.loader.exec_module(lib)
+            except Exception as e:
+                del sys.modules[name]
+                log.exception("loader exec module error", exc_info=e)
+                return
+
+            self.from_module_setup(lib, name)
         else:
             path = Path(*name.split("."))
 
-            for file in path.glob("[!_]*.pyz"):
-                ...
-
-            for file in path.glob("[!_]*.py"):
-                pa = ".".join([*file.parts[:-1], file.stem])
-                if pa in block_plugin:
+            for file in path.glob("[!_]*"):
+                if (pa := ".".join([*file.parts[:-1], file.stem])) in block_plugin:
                     continue
 
-                self.load_plugin(
-                    pa,
-                    package=package,
-                    block_plugin=block_plugin,
-                )
+                if file.is_file() and file.suffix == ".py":
+                    self.load_plugin(
+                        pa,
+                        package=package,
+                        block_plugin=block_plugin,
+                    )
+                else:
+                    self.from_module_setup(
+                        importlib.import_module(f"{pa}.main", package)
+                    )
 
-    def _load_from_module_spec(self, spec: import_machine.ModuleSpec, key: str) -> None:
-        lib = import_util.module_from_spec(spec)
-        sys.modules[key] = lib
+    def from_module_setup(self, module: ModuleType, name: str | None = None) -> None:
+        if name is None:
+            name = module.__name__
 
-        try:
-            spec.loader.exec_module(lib)
-        except Exception as e:
-            del sys.modules[key]
-            log.exception("Error loading extension")
-            return
-
-        if (setup := getattr(lib, "setup", None)) is None:
-            # TODO use NoEntryPointError error
-            del sys.modules[key]
-            raise ExtensionNotFound(key)
+        if (setup := getattr(module, "setup", None)) is None:
+            del sys.modules[name]
+            raise NoEntryPointError()
 
         try:
             setup(self)
         except Exception as e:
-            del sys.modules[key]
+            del sys.modules[name]
             log.error(f"插劍加載失敗: {e}")
-            log.exception("Error loading extension")
+            raise ExtensionError()
         else:
-            self.__extensions[key] = lib
+            self.__extensions[name] = module
 
 
 def _is_submodule(parent: str, child: str) -> bool:

@@ -5,7 +5,7 @@ from discord.errors import LoginFailure
 from server import BaseServer, Plugin
 from server.utils import Config
 
-from ._client import Bot
+from .client import Bot
 
 
 class DiscordConfig(Config):

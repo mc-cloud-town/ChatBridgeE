@@ -77,7 +77,7 @@ class ReadClient:
     def on_command(self, command: str):
         if command.startswith("!!stats "):
             try:
-                import stats_helper
+                import stats_helper  # pyright: ignore
             except (ImportError, ModuleNotFoundError):
                 result = {"code": 2}
             else:

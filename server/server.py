@@ -8,10 +8,7 @@ __all__ = ("Server",)
 class Server(BaseServer):
     def __init__(self):
         super().__init__()
-        self.load_plugin(
-            f"{__package__}.base_plugin",
-            recursive=True,
-        )
+        self.load_plugin(f"{__package__}.base_plugin")
 
     async def on_ping(self, ctx: Context):
         await ctx.emit("server_pong")

@@ -16,9 +16,17 @@ class ExtensionNotFound(ExtensionError):
         super().__init__(f"Extension {name!r} could not be found.", name=name)
 
 
+class NoEntryPointError(ExtensionError):
+    def __init__(self, name: str) -> None:
+        super().__init__(
+            f"Extension {name!r} there is no program entry point.",
+            name=name,
+        )
+
+
 class ExtensionAlreadyLoaded(ExtensionError):
     def __init__(self, name: str) -> None:
-        super().__init__(f"Extension {name!r} could not be found.", name=name)
+        super().__init__(f"Extension {name!r} is loaded repeatedly.", name=name)
 
 
 class ExtensionPluginNotFond(ExtensionError):
