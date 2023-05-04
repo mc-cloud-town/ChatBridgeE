@@ -1,8 +1,29 @@
 from typing import Optional
+
 import socketio
-from mcdreforged.api.all import PluginServerInterface, RText, RColor
+from mcdreforged.api.all import (
+    PluginServerInterface,
+    RColor,
+    RText,
+)
 
 from .config import ChatBridgeEConfig
+
+
+class RTextJSON(RText):
+    def __init__(self, data) -> None:
+        self.data = data
+
+    def to_json_object(self) -> str:
+        if isinstance(self.data, dict):
+            return self.data.get("mc", {})
+        return {}
+
+    def to_plain_text(self) -> str:
+        if isinstance(self.data, dict):
+            return self.data.get("ansi", "")
+        return ""
+
 
 # TODO add format event data from config
 class ReadClient:
@@ -30,13 +51,10 @@ class ReadClient:
         self.server.say(msg)
 
     def on_chat(self, server_name: str, msg: dict):
-        if data := msg.get("mc"):
-            self.server.say(RText.from_json_object(data))
+        data = RTextJSON(msg)
 
-        if data := msg.get("ansi"):
-            print(data)
-        else:
-            print(msg)
+        self.server.say(data)
+        print(data.to_plain_text())
 
     # def on_new_connect(self, server_name: str) -> None:
     #     print(server_name)
