@@ -1,6 +1,5 @@
 import asyncio
 import inspect
-import json
 import logging
 import os
 from typing import Any, Callable, Coroutine, List, Optional, TypeVar, Union
@@ -257,7 +256,6 @@ class BaseServer(PluginMixin):
         elif isinstance(msg, (list, tuple)):
             msg = FormatMessage(*msg, no_mark=no_mark)
 
-        print(json.dumps(msg.mc, indent=2, ensure_ascii=False))
         if isinstance(msg, FormatMessage):
             msg = msg.__dict__
 
