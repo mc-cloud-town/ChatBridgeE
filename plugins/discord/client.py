@@ -5,6 +5,7 @@ import discord
 from discord import Intents, Message, TextChannel
 
 from server import Plugin
+from server.utils.format import FormatMessage
 
 
 class Bot(discord.Bot):
@@ -36,37 +37,42 @@ class Bot(discord.Bot):
             return None
         return await self.get_or_fetch_message(msg.reference.message_id, msg.channel)
 
-    def style_message(self, msg: Message) -> str:
+    def style_message(self, msg: Message) -> list[FormatMessage]:
         contents = []
         if content := msg.content:
-            contents.append(("" if content.startswith("\\:") else " ") + content)
+            contents.append(
+                FormatMessage(
+                    content[2:] if content.startswith("\\:") else f" {content}",
+                    no_mark=False,
+                )
+            )
         if len(msg.attachments) > 0:
-            contents.append(f" @{msg.jump_url} <打開附件>")
-        return " ".join(contents)
+            contents += [FormatMessage(" <打開附件>", f"@ {msg.jump_url}")]
+        return contents
 
     async def on_message(self, msg: Message):
-        if msg.author == self.user or msg.channel.id not in self.chat_channels:
+        author = msg.author
+        if (
+            msg.channel.id not in self.chat_channels
+            or author == self.user
+            or author.system
+        ):
             return
+
         self.log.info(f"discord 收到訊息 {msg}")
         if (ref_msg := await self.get_reference_message(msg)) is not None:
-            style = self.style_message(ref_msg)
-            print(style)
             ref_author = ref_msg.author
             # ┌─回覆自 <XX> XX
             await self.server.send(
-                [
-                    "g ┌─回覆自 <",
-                    "c " + (ref_author.nick or ref_author.name),
-                    f"g >{self.style_message(ref_msg)}\n",
-                ]
+                ["g ┌─回覆自 <", "r " + (ref_author.nick or ref_author.name), "g >\n"]
+                + self.style_message(ref_msg)
             )
 
-        author = msg.author
-        content = ["g [", "c DC", "g ] "]
-        content += ["g <", "c " + (author.nick or author.name), "g > "]
-        content.append(self.style_message(msg))
+        content = ["f [", "r Discord", "f ] "]
+        content += ["f <", f"r {author.nick or author.name}", "f > "]
+        content += self.style_message(msg)
 
-        # [DC] <XX> XX
+        # [Discord] <XX> XX
         await self.server.send(content)
 
     async def get_or_fetch_message(

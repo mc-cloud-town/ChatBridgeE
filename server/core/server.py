@@ -1,8 +1,9 @@
 import asyncio
 import inspect
+import json
 import logging
 import os
-from typing import Any, Callable, Coroutine, Optional, TypeVar, Union, List
+from typing import Any, Callable, Coroutine, List, Optional, TypeVar, Union
 
 from aiohttp import web
 from socketio import AsyncServer
@@ -241,25 +242,28 @@ class BaseServer(PluginMixin):
     async def send(
         self,
         msg: Union[str, FormatMessage, Any],
+        server_name: str = None,
         to: Optional[str] = None,
         room: Optional[str] = None,
         skip_sid: Optional[Union[List[str], str]] = None,
         namespace: Optional[str] = None,
         callback: Optional[Callable[..., Any]] = None,
         format: Optional[bool] = True,
+        no_mark: bool = True,
         **kwargs: Any,
     ):
         if isinstance(msg, str) and format:
-            msg = FormatMessage(msg)
+            msg = FormatMessage(msg, no_mark=no_mark)
         elif isinstance(msg, (list, tuple)):
-            msg = FormatMessage(*msg)
+            msg = FormatMessage(*msg, no_mark=no_mark)
 
+        print(json.dumps(msg.mc, indent=2, ensure_ascii=False))
         if isinstance(msg, FormatMessage):
             msg = msg.__dict__
 
         await self.sio_server.emit(
             event="chat",
-            data=msg,
+            data=(server_name, msg),
             to=to,
             room=room,
             skip_sid=skip_sid if type(skip_sid) is list else [skip_sid],

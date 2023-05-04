@@ -28,21 +28,22 @@ e - grEEn
 v - naVy blue
 k - blaK
 
-^<format> <text> - hover over tooltip text, appearing when hovering with your mouse
+^:<format> <text> - hover over tooltip text, appearing when hovering with your mouse
     over the text below.
-?<suggestion>    - command suggestion - a message that will be pasted to chat when text
+?:<suggestion>    - command suggestion - a message that will be pasted to chat when text
     below it is clicked.
-!<message>       - a chat message that will be executed when the text below
+!:<message>       - a chat message that will be executed when the text below
     it is clicked.
-@<url>           - a URL that will be opened when the text below it is clicked.
-&<text>          - a text that will be copied to clipboard when the text below
+@:<url>           - a URL that will be opened when the text below it is clicked.
+&:<text>          - a text that will be copied to clipboard when the text below
     it is clicked.
 
 reference:
 https://github.com/gnembon/fabric-carpet/blob/master/docs/scarpet/Full.md#formatcomponents--formatcomponents-
 """
-from enum import Enum
+import copy
 import json
+from enum import Enum
 from typing import Optional, Union
 
 
@@ -101,19 +102,52 @@ class ChatFormatting(Enum):
         return [f for f in cls if not f.is_format]
 
 
-class FormatMessage:
-    def __init__(self, *msgs: Union[str, "FormatMessage"]) -> None:
-        self.original_msgs = msgs
+mark_data = {
+    # ?:<suggestion> command
+    "?": {"clickEvent": {"action": "suggest_command"}},
+    # !:<command> clicked
+    "!": {"clickEvent": {"action": "run_command"}},
+    # ^:<format> <text> hover
+    "^": {"hoverEvent": {"action": "show_text"}},
+    # @:<url> URL
+    "@": {"clickEvent": {"action": "open_url"}},
+    # &:<text> copied
+    "&": {"clickEvent": {"action": "copy_to_clipboard"}},
+}
 
-        ansi, mc = "", []
+
+class FormatMessage:
+    def __init__(
+        self,
+        *msgs: Union[str, "FormatMessage"],
+        no_mark: bool = True,
+    ) -> None:
+        self.original_msgs = []
+        ansi, mc = "", [""]
         for msg in msgs:
-            if not isinstance(msg, FormatMessage):
-                ansi += get_ansi_console(msg)
-                mc.append(get_chat_component_form_text(msg))
+            if isinstance(msg, FormatMessage):
+                mc += msg.mc[1:]
+                ansi += msg.ansi
+                self.original_msgs += msg.original_msgs
                 continue
 
-            ansi += msg.ansi
-            mc.append(msg.mc)
+            self.original_msgs += [msg]
+
+            ansi += get_ansi_console(msg)
+            desc, text = split_desc_text(msg)
+
+            for key in mark_data.keys():
+                if not no_mark or key not in desc:
+                    continue
+
+                if len(mc) > 0 and isinstance(d := mc[len(mc) - 1], dict):
+                    tmp = copy.deepcopy(mark_data.get(key))
+                    tmp[list(tmp.keys())[0]]["value"] = text
+
+                    d.update({**tmp, **parse_style(desc)[0]})
+                    break
+            else:
+                mc.append({"text": text, **parse_style(desc)[0]})
 
         self.ansi, self.mc = ansi, mc
 
@@ -127,30 +161,6 @@ def split_desc_text(msg: str) -> tuple[str, str]:
 
     desc, *texts = msg.split(" ")
     return desc, " ".join(texts)
-
-
-def get_chat_component_form_text(msg: str) -> dict:
-    desc, text = split_desc_text(msg)
-    style = {"text": text}
-
-    for mark, event in {
-        "?": {"clickEvent": {"action": "suggest_command"}},
-        "!": {"clickEvent": {"action": "run_command"}},
-        "^": {"hoverEvent": {"action": "show_text"}},
-        "@": {"clickEvent": {"action": "open_url"}},
-        "&": {"clickEvent": {"action": "copy_to_clipboard"}},
-    }.items():
-        if desc.startswith(mark):
-            desc = desc[1:]
-
-            event[list(event.keys())[0]]["value"] = text if mark == "^" else desc[1:]
-            style.update(event)
-
-            if mark == "^":
-                return style
-            break
-
-    return {**style, **parse_style(desc)[0]}
 
 
 def get_ansi_console(msg: str) -> tuple[dict, str]:

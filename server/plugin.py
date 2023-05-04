@@ -189,11 +189,10 @@ class PluginMixin:
         sys.modules.pop(key, None)
 
         for module in sys.modules.copy().keys():
-            if _is_submodule(lib.__name__, module):
-                rv = sys.modules.pop(module, None)
+            if _is_submodule(lib.__name__.removesuffix(".main"), module):
                 log.debug(
                     f"Remove module {module} when unloading plugin {repr(self)}, "
-                    f"success={rv}"
+                    f"success={sys.modules.pop(module, None)}"
                 )
 
     def _resolve_name(self, name: str, package: Optional[str]) -> str:

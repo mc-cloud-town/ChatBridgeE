@@ -29,8 +29,14 @@ class ReadClient:
     def say(self, msg: str) -> None:
         self.server.say(msg)
 
-    def on_chat(self, *args, **kwargs):
-        print(args, kwargs)
+    def on_chat(self, server_name: str, msg: dict):
+        if data := msg.get("mc"):
+            self.server.say(RText.from_json_object(data))
+
+        if data := msg.get("ansi"):
+            print(data)
+        else:
+            print(msg)
 
     # def on_new_connect(self, server_name: str) -> None:
     #     print(server_name)
