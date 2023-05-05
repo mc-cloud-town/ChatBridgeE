@@ -1,11 +1,7 @@
 from typing import Optional
 
 import socketio
-from mcdreforged.api.all import (
-    PluginServerInterface,
-    RColor,
-    RText,
-)
+from mcdreforged.api.all import PluginServerInterface, RColor, RText
 
 from .config import ChatBridgeEConfig
 

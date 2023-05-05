@@ -18,7 +18,6 @@ def main():
     )
 
     ser = Server()
-
     ser.load_plugin(
         "plugins",
         block_plugin=ser.config.get("stop_plugins"),
@@ -44,15 +43,15 @@ def main():
             )
             ser.command_manager.call_command(result)
 
-    async def main():
-        with patch_stdout(raw=True):
-            await asyncio.gather(
-                asyncio.create_task(prompt_align()),
-                asyncio.create_task(ser.start()),
-            )
-
     try:
-        asyncio.run(main())
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+
+        with patch_stdout(raw=True):
+            loop.create_task(prompt_align())
+            loop.create_task(ser.start())
+
+        loop.run_forever()
     except KeyboardInterrupt:
         ser.log.info("[red]關閉中請稍後...[/red]", extra=dict(markup=True))
         for name in ser.plugins.copy().keys():
