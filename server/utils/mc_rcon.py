@@ -3,10 +3,13 @@ https://developer.valvesoftware.com/wiki/Source_RCON_Protocol
 """
 
 import asyncio
+import logging
 import struct
 from asyncio import AbstractEventLoop, BaseTransport, Future, Lock, Protocol
 from enum import Enum, auto
 from typing import Self, TypedDict
+
+log = logging.getLogger("chat-bridgee")
 
 
 class RconPacketType(Enum):
@@ -87,7 +90,7 @@ class RconClientProtocol(Protocol):
         # -1 is for 1 bytes Empty string terminator
         packet_payload = data[8:-1].decode("utf-8")  # Pocket body (At least 1 byte)
 
-        print("packet_id", packet_id, packet_type, packet_payload)
+        log.info(f"read id: {packet_id};type: {packet_type};data: {packet_payload}")
         if wait := self._waiters.get(None if packet_type == 2 else packet_id):
             wait.set_result(
                 RconPacketData(
@@ -98,7 +101,7 @@ class RconClientProtocol(Protocol):
             )
 
     def connection_lost(self, exc):
-        print("The server closed the connection")
+        log.info(f"[{self._transport}] The server closed the connection")
 
     async def authenticate(self, password: str) -> None:
         self.password = password
@@ -160,7 +163,8 @@ class RconClient:
 if __name__ == "__main__":
 
     async def main():
-        with RconClient("127.0.0.1", 25575, "1234") as client:
-            await client.execute("list")
+        async with RconClient("127.0.0.1", 25575, "1234") as client:
+            result = await client.execute("list")
+            print(result["data"])
 
     asyncio.run(main())
