@@ -170,7 +170,7 @@ def init_logging(
             level=logging.INFO,
             rich_tracebacks=True,
             log_time_format="[%X]",
-            # tracebacks_show_locals=True,
+            show_path=False,
         )
     )
 

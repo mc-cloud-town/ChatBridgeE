@@ -1,3 +1,4 @@
+from asyncio import AbstractEventLoop
 from . import BaseServer, Context
 
 __all__ = ("Server",)
@@ -6,8 +7,8 @@ __all__ = ("Server",)
 
 
 class Server(BaseServer):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, loop: AbstractEventLoop | None = None):
+        super().__init__(loop=loop)
         self.load_plugin(f"{__package__}.base_plugin")
 
     async def on_ping(self, ctx: Context):

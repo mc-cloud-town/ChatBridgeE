@@ -1,4 +1,5 @@
 import asyncio
+from asyncio import AbstractEventLoop
 import inspect
 import logging
 import os
@@ -24,14 +25,19 @@ CoroFuncT = TypeVar("CoroFuncT", bound=CoroFunc)
 
 
 class BaseServer(PluginMixin):
-    def __init__(self, config_type: str = "yaml"):
+    def __init__(
+        self,
+        config_type: str = "yaml",
+        loop: AbstractEventLoop | None = None,
+    ):
         super().__init__()
 
+        self.loop = asyncio.get_running_loop() if loop is None else loop
         self.extra_events: dict[str, list[CoroFunc]] = {}
 
         self.clients: dict[str, Context] = {}
         self.sio_server = AsyncServer()
-        self.app = web.Application()
+        self.app = web.Application(loop=self.loop)
         self.command_manager = CommandManager(self)
         self.log = log
         self.config = Config("chatbridgee-config", config_type=config_type)
@@ -162,7 +168,7 @@ class BaseServer(PluginMixin):
                 await self.sio_server.disconnect(sid)
                 return
             self.log.info(f"客戶端登入成功 {user.name}")
-            self.clients[sid] = (ctx := self.get_context(sid, user))
+            self.clients[sid] = (ctx := self.create_context(sid, user, auth))
             self.dispatch("connect", ctx, auth)
 
         @sio_server.event
@@ -182,8 +188,8 @@ class BaseServer(PluginMixin):
 
             self.dispatch(event_name, self.clients.get(sid), *args)
 
-    def get_context(self, sid: str, user: UserAuth) -> Context:
-        return Context(self, sid, user)
+    def create_context(self, sid: str, user: UserAuth, auth: dict = {}) -> Context:
+        return Context(self, sid, user, auth)
 
     async def start(self) -> web.AppRunner:
         runner = web.AppRunner(self.app)

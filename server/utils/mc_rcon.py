@@ -126,6 +126,9 @@ class RconClientProtocol(Protocol):
         self._transport.close()
         self.state = ConnectState.CLOSED
 
+    def is_connected(self) -> bool:
+        return self.state in {ConnectState.CONNECTED, ConnectState.AUTHENTICATED}
+
 
 class RconClient:
     def __init__(
@@ -142,7 +145,14 @@ class RconClient:
         self.loop = asyncio.get_running_loop() if loop is None else loop
         self.protocol = RconClientProtocol(self.loop) if protocol is None else protocol
 
+    @property
+    def is_connected(self):
+        return self.protocol.is_connected()
+
     async def connect(self) -> None:
+        if self.is_connected:
+            raise Exception("Connection is already established")
+
         await self.loop.create_connection(self.protocol, "127.0.0.1", 25575)
         await self.protocol.authenticate(self.password)
 

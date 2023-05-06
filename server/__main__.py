@@ -17,7 +17,9 @@ def main():
         extra=dict(markup=True),
     )
 
-    ser = Server()
+    asyncio.set_event_loop(loop := asyncio.new_event_loop())
+
+    ser = Server(loop=loop)
     ser.load_plugin(
         "plugins",
         block_plugin=ser.config.get("stop_plugins"),
@@ -32,27 +34,26 @@ def main():
         )
 
         while True:
-            result: str = (
-                await session.prompt_async(
-                    "> ",
-                    completer=CommandCompleter(ser.command_manager),
-                    complete_while_typing=True,
-                    auto_suggest=AutoSuggestFromHistory(),
+            with patch_stdout(raw=True):
+                result: str = (
+                    await session.prompt_async(
+                        "> ",
+                        completer=CommandCompleter(ser.command_manager),
+                        complete_while_typing=True,
+                        auto_suggest=AutoSuggestFromHistory(),
+                    )
+                    or ""
                 )
-                or ""
-            )
             ser.command_manager.call_command(result)
 
     try:
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-
         with patch_stdout(raw=True):
-            loop.create_task(prompt_align())
-            loop.create_task(ser.start())
+            s = loop.create_task(prompt_align(), name="prompt_align")
+            loop.create_task(ser.start(), name="ser_start")
 
         loop.run_forever()
     except KeyboardInterrupt:
+        s.cancel()
         ser.log.info("[red]關閉中請稍後...[/red]", extra=dict(markup=True))
         for name in ser.plugins.copy().keys():
             ser.remove_plugin(name)

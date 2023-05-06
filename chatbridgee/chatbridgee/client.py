@@ -45,6 +45,22 @@ def display_help(source: CommandSource):
     source.reply(tr("help_message", version=META.version, prefix="!!cbe"))
 
 
+def parse_properties(path: Path | str) -> dict:
+    path = Path(path) / "server.properties"
+    if not path.is_file():
+        return {}
+
+    result = {}
+    for line in path.read_text(encoding="utf-8").splitlines():
+        if line.startswith("#"):
+            continue
+
+        key, value = line.split("=", maxsplit=1)
+        result[key] = value
+
+    return result
+
+
 def on_load(server: PluginServerInterface, old_module):
     config_path = Path(server.get_data_folder()) / "config.json"
 
@@ -65,6 +81,19 @@ def on_load(server: PluginServerInterface, old_module):
 
     ReadClient(server, sio, config)
 
+    auth_else = {}
+    directory = server.get_mcdr_config().get("working_directory", "server")
+    if (mc_config := parse_properties(directory)).get("enable-rcon"):
+        auth_else["rcon"] = {
+            k: v
+            for k, v in {
+                "ip": mc_config.get("rcon.ip"),
+                "port": mc_config.get("rcon.port"),
+                "password": mc_config.get("rcon.password"),
+            }.items()
+            if v is not None
+        }
+
     server.register_help_message("!!cbe", tr("help_summary"))
     server.register_command(Literal("!!cbe").runs(display_help))
 
@@ -74,7 +103,7 @@ def on_load(server: PluginServerInterface, old_module):
         try:
             sio.connect(
                 f"http://{config.server_address}",
-                auth={"name": auth.name, "password": auth.password},
+                auth={"name": auth.name, "password": auth.password, **auth_else},
             )
             sio.wait()
         except exceptions.ConnectionError:
