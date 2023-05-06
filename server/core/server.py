@@ -167,7 +167,7 @@ class BaseServer(PluginMixin):
                 await self.sio_server.emit("error", "登入失敗", room=sid)
                 await self.sio_server.disconnect(sid)
                 return
-            self.log.info(f"客戶端登入成功 {user.name}")
+            self.log.debug(f"客戶端登入成功 {user.name}")
             self.clients[sid] = (ctx := self.create_context(sid, user, auth))
             self.dispatch("connect", ctx, auth)
 

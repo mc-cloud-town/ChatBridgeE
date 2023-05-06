@@ -20,12 +20,6 @@ class Discord(Plugin, config=DiscordConfig):
 
         self.bot = Bot(self)
 
-    @Plugin.listener()
-    async def on_message(self, a, b):
-        # TODO
-        print(a, b)
-        print("----------------------------------------")
-
     def on_load(self):
         config = self.config
         config_path = f"{config.__config_path__}/{config.__config_name__}.{config.__config_filetype__}"  # noqa
@@ -48,7 +42,7 @@ class Discord(Plugin, config=DiscordConfig):
             except Exception:
                 pass
 
-        self.bot.loop.create_task(close())
+        self.loop.create_task(close())
 
 
 def setup(server: BaseServer):

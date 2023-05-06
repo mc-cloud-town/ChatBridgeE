@@ -47,7 +47,7 @@ class Bot(discord.Bot):
                 )
             )
         if len(msg.attachments) > 0:
-            contents += [FormatMessage("li <打開附件>", f"@ {msg.jump_url}")]
+            contents += [FormatMessage("li <點我打開附件>", f"@ {msg.jump_url}")]
         return contents
 
     async def on_message(self, msg: Message):

@@ -8,7 +8,8 @@
   "author": ["monkey-cat<github:a3510377>"],
   "link": "https://github.com/mc-cloud-town/ChatBridgeE",
   "dependencies": {
-    "mcdreforged": ">=2.2.0-"
+    "mcdreforged": ">=2.2.0-",
+    "python-socketio": ">=5.0.0"
   },
   "archive_name": "ChatBridgeE.pyz",
   "entrypoint": "chatbridgee.client",

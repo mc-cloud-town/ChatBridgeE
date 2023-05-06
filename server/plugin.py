@@ -71,6 +71,7 @@ class Plugin(metaclass=PluginMeta):
 
     def __init__(self, server: "BaseServer") -> None:
         self.server = server
+        self.loop = server.loop
         self.server_config = server.config
         self.log = server.log
 

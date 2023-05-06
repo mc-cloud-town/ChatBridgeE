@@ -1,2 +1,2 @@
 mcdreforged>=2.2.0
-python-socketio
+python-socketio>=5.0.0
