@@ -17,6 +17,12 @@ class Config(ABC):
         cls = self.__class__
         attrs = []
 
+        self.__config_file_path__ = kwargs.pop(
+            "_config_path",
+            Path(cls.__config_path__)
+            / f"{cls.__config_name__}.{cls.__config_filetype__}",
+        )
+
         for name, value in cls.__dict__.items():
             if name.startswith("_"):
                 continue
@@ -85,14 +91,14 @@ class Config(ABC):
         if path.is_file():
             with open(path, "r") as f:
                 if file_type == "json":
-                    d = cls(**json.load(f))
+                    d = cls(**json.load(f), _config_path=path)
                 else:
                     file_type = "yaml"
-                    d = cls(**yaml.load(f, Loader=yaml.FullLoader))
+                    d = cls(**yaml.load(f, Loader=yaml.FullLoader), _config_path=path)
             d.save(file_type)
             return d
 
-        new_data = cls(**kwargs)
+        new_data = cls(**kwargs, _config_path=path)
         if _auto_create:
             new_data.save()
         return new_data

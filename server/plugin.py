@@ -106,8 +106,9 @@ class Plugin(metaclass=PluginMeta):
                     server.remove_listener(getattr(self, method_name))
         finally:
             try:
-                self.on_load()
-            except Exception:
+                self.on_unload()
+            except Exception as e:
+                log.error(f"插劍 {self.__plugin_name__} on_unload 出錯: {e}")
                 pass
 
     def on_load(self) -> None:
@@ -262,6 +263,10 @@ class PluginMixin:
             raise ExtensionError(e, name="插劍加載失敗")
         else:
             self.__extensions[name] = module
+
+    @property
+    def extensions_catch(self):
+        return self.__extensions
 
 
 def _is_submodule(parent: str, child: str) -> bool:

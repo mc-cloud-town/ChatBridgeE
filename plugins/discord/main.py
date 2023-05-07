@@ -1,5 +1,3 @@
-import threading
-
 from discord.errors import LoginFailure
 
 from server import BaseServer, Context, Plugin
@@ -27,19 +25,23 @@ class Discord(Plugin, config=DiscordConfig):
 
     def on_load(self):
         config = self.config
-        config_path = f"{config.__config_path__}/{config.__config_name__}.{config.__config_filetype__}"  # noqa
 
-        def start():
+        async def runner():
             try:
-                self.bot.run(config.get("token"))
+                await self.bot.start(config.get("token"))
             except LoginFailure:
-                self.log.error(f"Discord Token 錯誤, 請在 {config_path} 中修改 token 的值")
+                self.log.error(
+                    "Discord Token 錯誤, 請在 "
+                    f"{config.__config_file_path__} 中修改 token 的值"
+                )
                 self.server.unload_extension(self.__module__)
             except (RuntimeError, AssertionError):
                 pass
+            finally:
+                if not self.bot.is_closed():
+                    await self.bot.close()
 
-        self.loop.create_task()
-        threading.Thread(target=start).start()
+        self.loop.create_task(runner())
 
     def on_unload_before(self):
         async def close():
