@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import importlib
 import inspect
 import logging
@@ -7,7 +9,6 @@ from pathlib import Path
 from types import ModuleType
 from typing import TYPE_CHECKING, Any, Callable, ClassVar, Optional, Self, Type
 
-from .utils.config import Config
 from .errors import (
     ExtensionAlreadyLoaded,
     ExtensionError,
@@ -16,6 +17,7 @@ from .errors import (
     NoEntryPointError,
 )
 from .utils import MISSING
+from .utils.config import Config
 
 if TYPE_CHECKING:
     from .core.server import BaseServer, CoroFuncT
@@ -52,6 +54,7 @@ class PluginMeta(type):
                     "__plugin_listener__",
                     False,
                 ):
+                    print(f"->> {name}")
                     events[name] = getattr(
                         func,
                         "__event_name__",
@@ -121,8 +124,11 @@ class Plugin(metaclass=PluginMeta):
         pass
 
     @classmethod
-    def listener(cls, name: str = MISSING) -> Callable[["CoroFuncT"], "CoroFuncT"]:
-        def decorator(func: "CoroFuncT") -> "CoroFuncT":
+    def listener(
+        cls,
+        name: str | CoroFuncT = MISSING,
+    ) -> Callable[[CoroFuncT], CoroFuncT]:
+        def decorator(func: CoroFuncT) -> CoroFuncT:
             # shallow copy
             actual = func
 
@@ -138,6 +144,10 @@ class Plugin(metaclass=PluginMeta):
             setattr(actual, "__plugin_listener__", True)
 
             return func
+
+        if inspect.iscoroutinefunction(name):
+            name = (func := name).__name__
+            return decorator(func)
 
         return decorator
 

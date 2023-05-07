@@ -53,6 +53,8 @@ class BaseServer(PluginMixin):
         if not asyncio.iscoroutinefunction(func):
             raise TypeError("Listeners must be coroutines")
 
+        if not name.startswith("on_"):
+            name = f"on_{name}"
         if name.startswith("on_command_"):
             self.command_manager.add_command(" ".join(name.split("_")[2:]))
 
@@ -92,9 +94,8 @@ class BaseServer(PluginMixin):
         else:
             self._schedule_event(coro, method, *args, **kwargs)
 
-        if method in self.extra_events:
-            for func in self.extra_events.get(method, []):
-                self._schedule_event(func, event_name, *args, **kwargs)
+        for func in self.extra_events.get(method, []):
+            self._schedule_event(func, event_name, *args, **kwargs)
 
     async def _run_event(
         self,

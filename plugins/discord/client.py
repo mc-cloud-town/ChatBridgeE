@@ -30,6 +30,14 @@ class Bot(discord.Bot):
     def chat_channel(self) -> int | None:
         return self.config.get("channel_for_chat", None)
 
+    async def get_or_fetch_channel(self, id: int) -> TextChannel | None:
+        if channel := self.get_channel(id):
+            return channel
+        try:
+            return await self.fetch_channel(id)
+        except Exception:
+            return None
+
     async def on_ready(self):
         self.log.info(f"[cyan]discord 登入 {self.user}[/cyan]", extra=dict(markup=True))
 

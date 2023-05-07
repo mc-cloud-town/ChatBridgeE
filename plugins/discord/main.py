@@ -1,3 +1,4 @@
+from discord import TextChannel
 from discord.errors import LoginFailure
 
 from server import BaseServer, Context, Plugin
@@ -22,6 +23,7 @@ class Discord(Plugin, config=DiscordConfig):
         super().__init__(server)
 
         self.bot = Bot(self, loop=self.loop)
+        self.chat_channel: TextChannel | None = ...
 
     def on_load(self):
         config = self.config
@@ -52,29 +54,45 @@ class Discord(Plugin, config=DiscordConfig):
 
         self.loop.create_task(close())
 
+    async def send_chat(
+        self,
+        content: str = None,
+        ctx: Context | None = None,
+        **kwargs,
+    ) -> None:
+        if not (id := self.config.get("channel_for_chat")):
+            return
+
+        if ctx:
+            content = f"[{ctx.display_name}] {content}"
+        if self.chat_channel is ...:
+            self.chat_channel = await self.bot.get_or_fetch_channel(id)
+
+        await self.chat_channel.send(content, **kwargs)
+
     @Plugin.listener
     async def on_server_start(self, ctx: Context):
-        ...
+        await self.send_chat("啟動中...", ctx=ctx)
 
     @Plugin.listener
     async def on_server_startup(self, ctx: Context):
-        ...
+        await self.send_chat("啟動完成", ctx=ctx)
 
     @Plugin.listener
     async def on_server_stop(self, ctx: Context):
-        ...
+        await self.send_chat("伺服器關閉", ctx=ctx)
 
     @Plugin.listener
     async def on_player_chat(self, ctx: Context, player_name: str, content: str):
-        ...
+        await self.send_chat(f"<{player_name}> {content}", ctx=ctx)
 
     @Plugin.listener
     async def on_player_joined(self, ctx: Context, player_name: str):
-        ...
+        await self.send_chat(f"{player_name} 加入了 {ctx.display_name}", ctx=ctx)
 
     @Plugin.listener
     async def on_player_left(self, ctx: Context, player_name: str):
-        self
+        await self.send_chat(f"{player_name} 離開了 {ctx.display_name}", ctx=ctx)
 
 
 def setup(server: BaseServer):

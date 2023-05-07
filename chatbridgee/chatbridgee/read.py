@@ -65,7 +65,7 @@ class ReadClient:
         self.from_server(server_name, "啟動完成")
 
     def on_server_stop(self, server_name: str) -> None:
-        self.from_server(server_name, "停止")
+        self.from_server(server_name, "伺服器關閉")
 
     def on_player_chat(self, server_name: str, player_name: str, content: str) -> None:
         self.from_server(server_name, f"<{player_name}> {content}")
