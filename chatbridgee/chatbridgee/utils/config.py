@@ -1,10 +1,9 @@
 import json
 from abc import ABC
 from pathlib import Path
-from typing import Any, ClassVar, Literal, Optional, Union, get_type_hints
+from typing import Any, ClassVar, Literal, Optional, Union
 
 import yaml
-from typeguard import check_type
 
 __all__ = ("Config",)
 
@@ -18,26 +17,12 @@ class Config(ABC):
         cls = self.__class__
         attrs = []
 
-        for name, type in get_type_hints(cls).items():
+        for name, value in cls.__dict__.items():
             if name.startswith("_"):
                 continue
-            attrs.append(name)
 
-            try:
-                getattr(cls, name)
-            except AttributeError:
-                if name not in kwargs:
-                    try:
-                        check_type(name, None, type)
-                    except TypeError:
-                        raise TypeError(f"Missing argument: {name}")
-                    setattr(self, name, None)
-                    continue
-                try:
-                    check_type(name, kwargs.get(name), type)
-                except TypeError:
-                    raise TypeError(f"Invalid type for argument {name}: {type}")
-            setattr(self, name, kwargs.pop(name))
+            attrs.append(name)
+            setattr(self, name, kwargs.pop(name, value))
 
         self._attrs = attrs
         cls.__slots__ = attrs
@@ -100,8 +85,12 @@ class Config(ABC):
         if path.is_file():
             with open(path, "r") as f:
                 if file_type == "json":
-                    return cls(**json.load(f))
-                return cls(**yaml.load(f, Loader=yaml.FullLoader))
+                    d = cls(**json.load(f))
+                else:
+                    file_type = "yaml"
+                    d = cls(**yaml.load(f, Loader=yaml.FullLoader))
+            d.save(file_type)
+            return d
 
         new_data = cls(**kwargs)
         if _auto_create:

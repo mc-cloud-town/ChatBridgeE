@@ -74,6 +74,7 @@ class Plugin(metaclass=PluginMeta):
         self.loop = server.loop
         self.server_config = server.config
         self.log = server.log
+        self.config: Config = {}
 
         if self.__plugin_config__:
             self.config = self.__plugin_config__.load(_auto_create=True)
@@ -258,7 +259,7 @@ class PluginMixin:
         except Exception as e:
             del sys.modules[name]
             log.error(f"插劍加載失敗: {e}")
-            raise ExtensionError()
+            raise ExtensionError(e, name="插劍加載失敗")
         else:
             self.__extensions[name] = module
 

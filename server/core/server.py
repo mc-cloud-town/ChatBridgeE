@@ -1,8 +1,8 @@
 import asyncio
-from asyncio import AbstractEventLoop
 import inspect
 import logging
 import os
+from asyncio import AbstractEventLoop
 from typing import Any, Callable, Coroutine, List, Optional, TypeVar, Union
 
 from aiohttp import web
@@ -13,8 +13,8 @@ from server.utils.format import FormatMessage
 from ..context import Context
 from ..plugin import PluginMixin
 from ..utils import MISSING
-from . import CommandManager, Config
-from .config import UserAuth
+from . import CommandManager
+from .config import Config, UserAuth
 
 __all__ = ("BaseServer",)
 

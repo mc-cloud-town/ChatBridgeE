@@ -1,4 +1,5 @@
 import asyncio
+from asyncio import AbstractEventLoop
 from typing import Any, Optional
 
 import discord
@@ -9,11 +10,11 @@ from server.utils.format import FormatMessage
 
 
 class Bot(discord.Bot):
-    def __init__(self, plugin: Plugin):
+    def __init__(self, plugin: Plugin, loop: AbstractEventLoop | None = None):
         super().__init__(
             command_prefix=plugin.config.get("prefix"),
             intents=Intents.all(),
-            loop=asyncio.new_event_loop(),
+            loop=asyncio.new_event_loop() if loop is None else loop,
         )
 
         self.plugin = plugin
@@ -26,8 +27,8 @@ class Bot(discord.Bot):
         )
 
     @property
-    def chat_channels(self) -> list[int]:
-        return self.config.get("chat_channels", [])
+    def chat_channel(self) -> int | None:
+        return self.config.get("channel_for_chat", None)
 
     async def on_ready(self):
         self.log.info(f"[cyan]discord 登入 {self.user}[/cyan]", extra=dict(markup=True))
@@ -52,11 +53,7 @@ class Bot(discord.Bot):
 
     async def on_message(self, msg: Message):
         author = msg.author
-        if (
-            msg.channel.id not in self.chat_channels
-            or author == self.user
-            or author.system
-        ):
+        if msg.channel.id != self.chat_channel or author == self.user or author.system:
             return
 
         self.log.info(f"discord 收到訊息 {msg}")
