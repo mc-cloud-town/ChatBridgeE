@@ -12,7 +12,7 @@ log = logging.getLogger("chat-bridgee")
 
 
 class BasePlugin_Commands(BasePlugin, description="指令處理"):
-    @Plugin.listener()
+    @Plugin.listener
     async def on_command_plugin_list(self):
         table = Table(show_header=False, show_lines=True, header_style="bold magenta")
 
@@ -26,7 +26,7 @@ class BasePlugin_Commands(BasePlugin, description="指令處理"):
 
         rich_print(table)
 
-    @Plugin.listener()
+    @Plugin.listener
     async def on_command_plugin_remove(self, name: str = MISSING):
         if name is MISSING:
             print("請輸入插件名稱")
@@ -41,7 +41,7 @@ class BasePlugin_Commands(BasePlugin, description="指令處理"):
             self.server_config.append("stop_plugins", module, only_one=True)
             print("插件移除成功")
 
-    @Plugin.listener()
+    @Plugin.listener
     async def on_command_plugin_add(self, name: str = MISSING):
         if name is MISSING:
             print("請輸入插件名稱")
@@ -55,7 +55,7 @@ class BasePlugin_Commands(BasePlugin, description="指令處理"):
         else:
             self.server_config.remove("stop_plugins", module)
 
-    @Plugin.listener()
+    @Plugin.listener
     async def on_command_plugin_reload(self, name: str = MISSING):
         if name is MISSING:
             for plugin in self.server.plugins.copy().values():
@@ -71,7 +71,7 @@ class BasePlugin_Commands(BasePlugin, description="指令處理"):
         await self.on_command_plugin_remove(name)
         await self.on_command_plugin_add(name)
 
-    @Plugin.listener()
+    @Plugin.listener
     async def on_command_send_all(self, message: str = MISSING):
         if message is MISSING:
             print("請輸入訊息")

@@ -54,7 +54,6 @@ class PluginMeta(type):
                     "__plugin_listener__",
                     False,
                 ):
-                    print(f"->> {name}")
                     events[name] = getattr(
                         func,
                         "__event_name__",

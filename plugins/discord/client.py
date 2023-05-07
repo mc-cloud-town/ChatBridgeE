@@ -4,6 +4,7 @@ from typing import Any, Optional
 
 import discord
 from discord import Intents, Message, TextChannel
+from rich.text import Text
 
 from server import Plugin
 from server.utils.format import FormatMessage
@@ -64,18 +65,20 @@ class Bot(discord.Bot):
         if msg.channel.id != self.chat_channel or author == self.user or author.system:
             return
 
-        self.log.info(f"discord 收到訊息 {msg}")
         if (ref_msg := await self.get_reference_message(msg)) is not None:
             ref_author = ref_msg.author
             # ┌─回覆自 <XX> XX
             await self.server.send(
-                ["g ┌─回覆自 <", "r " + (ref_author.nick or ref_author.name), "g >\n"]
+                ["g ┌─回覆自 <", "r " + (ref_author.nick or ref_author.name), "g > "]
                 + self.style_message(ref_msg)
             )
 
         content = ["f [", "r Discord", "f ] "]
         content += ["f <", f"r {author.nick or author.name}", "f > "]
         content += self.style_message(msg)
+        content = FormatMessage(*content)
+
+        self.log.info(f"discord 收到訊息 {Text.from_ansi(content.ansi)}")
 
         # [Discord] <XX> XX
         await self.server.send(content)
