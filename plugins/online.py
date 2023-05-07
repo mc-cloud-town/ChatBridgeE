@@ -10,7 +10,11 @@ class OnlineConfig(Config):
 class Online(Plugin, config=OnlineConfig):
     def __init__(self, server: BaseServer):
         super().__init__(server)
-        server.clients
+
+    async def get_online(self) -> str:
+        for client in self.server.clients.values():
+            client
+        ...
 
 
 def setup(server: BaseServer):

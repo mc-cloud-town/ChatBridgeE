@@ -3,11 +3,14 @@ from asyncio import AbstractEventLoop
 from typing import Any, Optional
 
 import discord
-from discord import Intents, Message, TextChannel
+from discord import ApplicationContext, Intents, Message, TextChannel
+from discord.ext import commands
 from rich.text import Text
 
 from server import Plugin
 from server.utils.format import FormatMessage
+
+from plugins.online import Online
 
 
 class Bot(discord.Bot):
@@ -16,6 +19,7 @@ class Bot(discord.Bot):
             command_prefix=plugin.config.get("prefix"),
             intents=Intents.all(),
             loop=asyncio.new_event_loop() if loop is None else loop,
+            help_command=None,
         )
 
         self.plugin = plugin
@@ -94,6 +98,12 @@ class Bot(discord.Bot):
             return await channel.fetch_message(id)
         except discord.NotFound:
             return None
+
+    @commands.command()
+    async def online(self, ctx: ApplicationContext):
+        plugin: Online = self.server.get_plugin(Online.__plugin_name__)
+
+        plugin
 
     def run(self, *args: Any, **kwargs: Any):
         super().run(*args, **kwargs)

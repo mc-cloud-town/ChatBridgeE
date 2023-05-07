@@ -10,8 +10,6 @@ from .client import Bot
 class DiscordConfig(Config):
     token: str = "<you discord token here>"
     prefix: str = "!!"
-    # slash or prefix
-    command_type = "slash"
     channel_for_chat = 123400000000000000
     command_channels: list[int] = [123400000000000000]
     parents_for_command: list[int] = [123400000000000000]

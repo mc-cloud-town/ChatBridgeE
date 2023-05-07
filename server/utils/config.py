@@ -33,9 +33,6 @@ class Config(ABC):
         self._attrs = attrs
         cls.__slots__ = attrs
 
-        if kwargs:
-            raise TypeError(f"Unexpected arguments: {','.join(kwargs.keys())}")
-
     def __init_subclass__(
         cls,
         type: Union[Literal["json"], Literal["yaml"]] = "yaml",

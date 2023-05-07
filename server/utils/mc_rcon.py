@@ -153,7 +153,7 @@ class RconClient:
         if self.is_connected:
             raise Exception("Connection is already established")
 
-        await self.loop.create_connection(self.protocol, "127.0.0.1", 25575)
+        await self.loop.create_connection(self.protocol, self.host, self.password)
         await self.protocol.authenticate(self.password)
 
     async def __aenter__(self) -> Self:
