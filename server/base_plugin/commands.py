@@ -31,6 +31,7 @@ class BasePlugin_Commands(BasePlugin, description="指令處理"):
         if name is MISSING:
             print("請輸入插件名稱")
             return
+
         module = f"plugins.{name}"
         try:
             self.server.unload_extension(module)
@@ -40,6 +41,8 @@ class BasePlugin_Commands(BasePlugin, description="指令處理"):
         else:
             self.server_config.append("stop_plugins", module, only_one=True)
             print("插件移除成功")
+
+        return True
 
     @Plugin.listener
     async def on_command_plugin_add(self, name: str = MISSING):
@@ -68,8 +71,8 @@ class BasePlugin_Commands(BasePlugin, description="指令處理"):
             print("插件重新加載完成")
             return
 
-        await self.on_command_plugin_remove(name)
-        await self.on_command_plugin_add(name)
+        if await self.on_command_plugin_remove(name):
+            await self.on_command_plugin_add(name)
 
     @Plugin.listener
     async def on_command_send_all(self, message: str = MISSING):

@@ -47,80 +47,46 @@ class RconClientProtocol(Protocol):
     ):
         self.state = ConnectState.CONNECTING
 
-        self._id = -1
-        self._buffer = b""
         self._transport: BaseTransport | None = None
         self._loop = asyncio.get_running_loop() if loop is None else loop
-        self._waiters = dict[str, Future[RconPacketData]]()
+        self._wait_read = Future[RconPacketData]()
         self._lock = Lock()
         self.timeout = command_timeout
 
     def __call__(self) -> Self:
         return self
 
-    async def _wait_receive(self, id: int = None):
-        self._waiters[id] = self._loop.create_future()
-
-        data = await self._waiters[id]
-        del self._waiters[id]
-
-        return data
-
-    async def _write(self, type: RconPacketType, data: str) -> int:
-        await self._lock.acquire()
-
-        out_payload = (
-            struct.pack("<ii", 0, type.value) + data.encode("utf-8") + b"\x00\x00"
-        )
-        self._transport.write(struct.pack("<i", len(out_payload)) + out_payload)
-
-        await asyncio.sleep(0.003)
-        self._lock.release()
-
     def connection_made(self, transport):
         self.state = ConnectState.CONNECTED
         self._transport = transport
 
     def data_received(self, data):
-        data = data[4:]  # data size(4 bytes), but data_received give all data received
+        # [data size(4 bytes), but data_received give all data received]:4
+        data = data[4:]
 
-        (packet_id,) = struct.unpack("<i", data[:4])  # ID Field (4 bytes)
-        (packet_type,) = struct.unpack("<i", data[4:8])  # Type Field (4 bytes)
+        # [ID Field (4 bytes), Type Field (4 bytes)]:8
+        (packet_id, packet_type) = struct.unpack("<ii", data[:8])
+
+        if data[-2:] != b"\x00\x00":
+            print("Incorrect padding")
+        if packet_id == -1:
+            print("Login failed")
 
         # -1 is for 1 bytes Empty string terminator
-        packet_payload = data[8:-1].decode("utf-8")  # Pocket body (At least 1 byte)
+        # Pocket body (At least 1 byte)
+        packet_payload = data[8:-2].decode("utf-8")
 
         log.info(f"read id: {packet_id};type: {packet_type};data: {packet_payload}")
-        if wait := self._waiters.get(None if packet_type == 2 else packet_id):
-            wait.set_result(
-                RconPacketData(
-                    id=packet_id,
-                    type=packet_type,
-                    data=packet_payload,
-                )
+        self._wait_read.set_result(
+            RconPacketData(
+                id=packet_id,
+                type=packet_type,
+                data=packet_payload,
             )
+        )
 
     def connection_lost(self, exc):
         log.info(f"[{self._transport}] The server closed the connection")
-
-    async def authenticate(self, password: str) -> None:
-        self.password = password
-        await self._write(RconPacketType.LOGIN, password)
-
-        res = await self._wait_receive()
-        if res["type"] == 2 and res["id"] == 0:
-            self.state = ConnectState.AUTHENTICATED
-            return
-
-        raise LoginError()
-
-    async def execute(self, command: str) -> RconPacketData:
-        self._id += 1
-        await self._write(RconPacketType.COMMAND_EXECUTE, command)
-        return await asyncio.wait_for(
-            self._wait_receive(self._id),
-            timeout=self.timeout,
-        )
 
     def close(self):
         self._transport.close()
@@ -128,6 +94,34 @@ class RconClientProtocol(Protocol):
 
     def is_connected(self) -> bool:
         return self.state in {ConnectState.CONNECTED, ConnectState.AUTHENTICATED}
+
+    async def _send(self, type: RconPacketType, data: str) -> RconPacketData:
+        await self._lock.acquire()
+
+        out_payload = (
+            struct.pack("<ii", 0, type.value) + data.encode("utf-8") + b"\x00\x00"
+        )
+        self._transport.write(struct.pack("<i", len(out_payload)) + out_payload)
+
+        data = await self._wait_read
+        self._wait_read = Future[RconPacketData]()
+        self._lock.release()
+        return data
+
+    async def authenticate(self, password: str) -> None:
+        self.password = password
+        res = await self._send(RconPacketType.LOGIN, password)
+        if res["type"] == 2 and res["id"] == 0:
+            self.state = ConnectState.AUTHENTICATED
+            return
+
+        raise LoginError()
+
+    async def execute(self, command: str) -> RconPacketData:
+        return await asyncio.wait_for(
+            self._send(RconPacketType.COMMAND_EXECUTE, command),
+            timeout=self.timeout,
+        )
 
 
 class RconClient:
@@ -149,11 +143,13 @@ class RconClient:
     def is_connected(self):
         return self.protocol.is_connected()
 
-    async def connect(self) -> None:
+    async def connect(self, *, exception: bool = True) -> None:
         if self.is_connected:
-            raise Exception("Connection is already established")
+            if exception:
+                raise Exception("Connection is already established")
+            return
 
-        await self.loop.create_connection(self.protocol, self.host, self.password)
+        await self.loop.create_connection(self.protocol, self.host, self.port)
         await self.protocol.authenticate(self.password)
 
     async def __aenter__(self) -> Self:
