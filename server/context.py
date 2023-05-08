@@ -29,9 +29,9 @@ class Context:
 
         if isinstance(rcon := self.auth.get("rcon"), dict):
             self.rcon = RconClient(
-                host=rcon.get("ip", "localhost"),
-                port=rcon.get("port", 25575),
-                password=rcon.get("password", ""),
+                host=rcon.get("ip", None),
+                port=rcon.get("port", None),
+                password=rcon.get("password", None),
                 loop=server.loop,
             )
 
@@ -83,7 +83,13 @@ class Context:
 
         await rcon.connect()
 
-    async def execute_command(self, command: str):
+    async def execute_command(self, command: str, exc_timeout: bool = True):
         if not self.rcon:
-            return None
-        return await self.rcon.execute(command)
+            return ...
+
+        await self.rcon.connect(exception=False)
+        try:
+            return await self.rcon.execute(command)
+        except Exception as e:
+            if exc_timeout:
+                raise e

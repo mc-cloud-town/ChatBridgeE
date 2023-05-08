@@ -87,7 +87,7 @@ class Plugin(metaclass=PluginMeta):
                 for method_name in method_names:
                     server.add_listener(getattr(self, method_name), name)
         finally:
-            server.log.info(f"加載插劍: {self.__plugin_name__}")
+            server.log.info(f"加載插劍: [{self.__module__}] {self.__plugin_name__}")
             try:
                 self.on_load()
             except Exception:

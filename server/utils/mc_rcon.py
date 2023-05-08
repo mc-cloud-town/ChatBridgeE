@@ -127,15 +127,15 @@ class RconClientProtocol(Protocol):
 class RconClient:
     def __init__(
         self,
-        host: str,
-        port: int,
+        host: str | None = None,
+        port: int | str | None = None,
         password: str | None = None,
         loop: AbstractEventLoop | None = None,
         protocol: Protocol | None = None,
     ) -> None:
-        self.host = host
-        self.port = port
-        self.password = password or ""
+        self.host = "localhost" if host is None else host
+        self.port = int(25575 if port is None else port)
+        self.password = "" if password is None else password
         self.loop = asyncio.get_running_loop() if loop is None else loop
         self.protocol = RconClientProtocol(self.loop) if protocol is None else protocol
 

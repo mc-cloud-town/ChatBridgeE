@@ -1,11 +1,13 @@
 import json
 from abc import ABC
 from pathlib import Path
-from typing import Any, ClassVar, Literal, Optional, Union
+from typing import Any, ClassVar, Literal, Optional, TypeVar, Union
 
 import yaml
 
 __all__ = ("Config",)
+
+_T = TypeVar("_T")
 
 
 class Config(ABC):
@@ -52,7 +54,7 @@ class Config(ABC):
     def __getitem__(self, key: str) -> Any:
         return getattr(self, key)
 
-    def get(self, key: str, default: Optional[None] = None) -> Optional[Any]:
+    def get(self, key: str, default: Optional[None] = None) -> Optional[_T]:
         try:
             return self[key]
         except AttributeError:

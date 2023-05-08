@@ -9,10 +9,13 @@
   "python.analysis.typeCheckingMode": "off",
   // check in workspace python file
   "python.analysis.diagnosticMode": "workspace",
-  "python.formatting.provider": "black",
+  "python.formatting.provider": "none",
   "editor.formatOnSave": true,
   "python.analysis.diagnosticSeverityOverrides": {
     "reportMissingModuleSource": "none"
   },
-  "cSpell.words": ["REUSEADDR"]
+  "cSpell.words": ["REUSEADDR"],
+  "[python]": {
+    "editor.defaultFormatter": "ms-python.black-formatter"
+  }
 }
