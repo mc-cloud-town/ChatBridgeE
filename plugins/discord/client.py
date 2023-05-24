@@ -1,6 +1,6 @@
 import asyncio
 from asyncio import AbstractEventLoop
-from typing import Any, Optional
+from typing import Optional
 
 import discord
 from discord import ApplicationContext, Intents, Message, TextChannel
@@ -104,6 +104,3 @@ class Bot(discord.Bot):
         plugin: Online = self.server.get_plugin(Online.__plugin_name__)
 
         plugin
-
-    def run(self, *args: Any, **kwargs: Any):
-        super().run(*args, **kwargs)

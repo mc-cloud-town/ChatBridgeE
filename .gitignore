@@ -133,3 +133,5 @@ chatbridgee-*.json
 chatbridgee-*.yaml
 
 config
+
+test/
