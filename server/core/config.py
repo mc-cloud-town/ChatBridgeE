@@ -13,16 +13,15 @@ _RT = TypeVar("_RT", bound=NamedTuple)
 _T = TypeVar("_T")
 
 
-class ConfigType(NamedTuple):
-    stop_plugins: list[str] = "plugins"
-    users: Dict[str, "UserAuth"] = {}
-    plugins_path: str = []
-
-
 class UserAuth(NamedTuple):
-    name: str
     password: str
     display_name: Optional[str]
+
+
+class ConfigType(NamedTuple):
+    stop_plugins: list[str] = "plugins"
+    users: Dict[str, UserAuth] = {}
+    plugins_path: str = []
 
 
 class Config(Generic[_RT]):
@@ -40,7 +39,7 @@ class Config(Generic[_RT]):
         if default_config is None:
             self.default_config = ConfigType(
                 stop_plugins=[],
-                users={},
+                users={"ClientName": UserAuth("ClientPassword", "生存服")._asdict()},
                 plugins_path="plugins",
             )
 
@@ -58,7 +57,7 @@ class Config(Generic[_RT]):
                 if self.config_type == "json":
                     json.dump(data, f, ensure_ascii=False, indent=2)
                 elif self.config_type == "yaml":
-                    yaml.dump(data, f, allow_unicode=False, indent=2)
+                    yaml.dump(data, f, allow_unicode=True, indent=2)
                 log.info(f"設定檔生成完成，'./{filepath}'")
 
     def read_config(self) -> dict:
