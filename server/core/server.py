@@ -206,7 +206,6 @@ class BaseServer(PluginMixin):
     async def __on_shutdown(self, app: web.Application):
         # use copy inhibition `RuntimeError: dictionary changed size during iteration`
         for client in self.clients.copy().values():
-            # TODO sleep all stop
             await client.disconnect()
 
     def check_user(self, name: str, password: str) -> Optional[UserData]:

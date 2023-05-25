@@ -10,8 +10,6 @@ from rich.text import Text
 from server import Plugin
 from server.utils.format import FormatMessage
 
-from plugins.online import Online
-
 
 class Bot(discord.Bot):
     def __init__(self, plugin: Plugin, loop: AbstractEventLoop | None = None):
@@ -101,6 +99,13 @@ class Bot(discord.Bot):
 
     @commands.command()
     async def online(self, ctx: ApplicationContext):
+        try:
+            from plugins.online import Online
+        except Exception:
+            return await ctx.send("未啟用 Online 插件")
+
         plugin: Online = self.server.get_plugin(Online.__plugin_name__)
 
         plugin
+
+        # TODO: online command

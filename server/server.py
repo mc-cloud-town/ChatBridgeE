@@ -3,8 +3,6 @@ from . import BaseServer, Context
 
 __all__ = ("Server",)
 
-# TODO use struct data
-
 
 class Server(BaseServer):
     def __init__(self, loop: AbstractEventLoop | None = None):
