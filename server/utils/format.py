@@ -120,11 +120,14 @@ class FormatMessage:
     def __init__(
         self,
         *msgs: Union[str, "FormatMessage"],
-        no_mark: bool = True,
+        no_mark: bool = False,
     ) -> None:
         self.original_msgs = []
         ansi, mc = "", [""]
         for msg in msgs:
+            if no_mark:
+                msg = f" {msg}"
+
             if isinstance(msg, FormatMessage):
                 mc += msg.mc[1:]
                 ansi += msg.ansi
@@ -137,7 +140,7 @@ class FormatMessage:
             desc, text = split_desc_text(msg)
 
             for key in mark_data.keys():
-                if not no_mark or key not in desc:
+                if key not in desc or no_mark:
                     continue
 
                 if len(mc) > 0 and isinstance(d := mc[len(mc) - 1], dict):

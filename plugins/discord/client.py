@@ -55,7 +55,6 @@ class Bot(discord.Bot):
             contents.append(
                 FormatMessage(
                     content[2:] if content.startswith("\\:") else f" {content}",
-                    no_mark=False,
                 )
             )
         if len(msg.attachments) > 0:
@@ -72,7 +71,7 @@ class Bot(discord.Bot):
             # ┌─回覆自 <XX> XX
             await self.server.send(
                 ["g ┌─回覆自 <", "r " + (ref_author.nick or ref_author.name), "g > "]
-                + self.style_message(ref_msg)
+                + self.style_message(ref_msg),
             )
 
         content = ["f [", "r Discord", "f ] "]

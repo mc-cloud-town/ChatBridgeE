@@ -253,7 +253,7 @@ class BaseServer(PluginMixin):
         namespace: Optional[str] = None,
         callback: Optional[Callable[..., Any]] = None,
         format: Optional[bool] = True,
-        no_mark: bool = True,
+        no_mark: bool = False,
         **kwargs: Any,
     ):
         if isinstance(msg, str) and format:
