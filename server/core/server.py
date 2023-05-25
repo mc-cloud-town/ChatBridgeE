@@ -14,7 +14,7 @@ from ..context import Context
 from ..plugin import PluginMixin
 from ..utils import MISSING
 from . import CommandManager
-from .config import Config, UserAuth
+from .config import Config, UserData
 
 __all__ = ("BaseServer",)
 
@@ -189,7 +189,7 @@ class BaseServer(PluginMixin):
 
             self.dispatch(event_name, self.clients.get(sid), *args)
 
-    def create_context(self, sid: str, user: UserAuth, auth: dict = {}) -> Context:
+    def create_context(self, sid: str, user: UserData, auth: dict = {}) -> Context:
         return Context(self, sid, user, auth)
 
     async def start(self) -> web.AppRunner:
@@ -199,7 +199,7 @@ class BaseServer(PluginMixin):
         site = web.TCPSite(runner, "localhost", port)
         await site.start()
 
-        print(f"======= Serving on http://127.0.0.1:{port}/ ======")
+        print(f"======= Serving on http://localhost:{port}/ ======")
 
         return runner
 
@@ -209,13 +209,12 @@ class BaseServer(PluginMixin):
             # TODO sleep all stop
             await client.disconnect()
 
-    def check_user(self, name: str, password: str) -> Optional[UserAuth]:
+    def check_user(self, name: str, password: str) -> Optional[UserData]:
         users = self.config.get("users", {})
         try:
             if (user := users.get(name)) and user.get("password") == password:
-                return UserAuth(
+                return UserData(
                     name=name,
-                    password=password,
                     display_name=user.get("display_name"),
                 )
         except TypeError:

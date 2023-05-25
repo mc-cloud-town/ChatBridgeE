@@ -18,6 +18,11 @@ class UserAuth(NamedTuple):
     display_name: Optional[str]
 
 
+class UserData(NamedTuple):
+    name: str
+    display_name: Optional[str]
+
+
 class ConfigType(NamedTuple):
     stop_plugins: list[str] = "plugins"
     users: Dict[str, UserAuth] = {}
