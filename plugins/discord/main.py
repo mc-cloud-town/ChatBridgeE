@@ -14,6 +14,8 @@ class DiscordConfig(Config):
     command_channels: list[int] = [123400000000000000]
     parents_for_command: list[int] = [123400000000000000]
     client_to_query_stats = "Survival"
+    online_display_name = "雲鎮工藝"
+    online_icon_url = "AUTO"
 
 
 class Discord(Plugin, config=DiscordConfig):

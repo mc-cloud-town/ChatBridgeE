@@ -1,9 +1,11 @@
 import asyncio
 from asyncio import AbstractEventLoop
+from datetime import datetime
+from functools import reduce
 from typing import Optional
 
 import discord
-from discord import ApplicationContext, Intents, Message, TextChannel
+from discord import ApplicationContext, Color, Embed, Intents, Message, TextChannel
 from discord.ext import commands
 from rich.text import Text
 
@@ -121,8 +123,26 @@ class BotCommand(discord.Cog):
             return await ctx.send("未啟用 Online 插件")
 
         plugin: Online = self.server.get_plugin(Online.__plugin_name__)
-
         data = await plugin.query()
-        await ctx.send(data)
+        embed = Embed(color=Color.blue(), timestamp=datetime.now())
+
+        embed.add_field(
+            name=f"成員列表 ({reduce(lambda x, y: x + y, map(len, data.values()))})",
+            value="\n".join(
+                [
+                    f"- [{k.display_name}]({len(v)}): {', '.join(v)}"
+                    for k, v in data.items()
+                ]
+            )
+            + f"\n\n總伺服器數: {len(data.keys())}",
+        )
+
+        embed.set_author(
+            name=f"{self.config.get('online_display_name', ctx.guild.name)} 上線人數",
+            icon_url=ctx.guild.icon
+            if (url := self.config.get("online_icon_url")) == "AUTO"
+            else url,
+        )
+        await ctx.send(embed=embed)
 
         # TODO: online command

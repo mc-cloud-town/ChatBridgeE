@@ -31,7 +31,7 @@ class Online(Plugin, config=OnlineConfig):
     @staticmethod
     def handle_minecraft(data: str) -> set[str]:
         if parsed := minecraft_list_match.match(data):
-            return set(parsed.group(1).strip().split(" "))
+            return set(filter(bool, parsed.group(1).strip().split(" ")))
 
         return set()
 
