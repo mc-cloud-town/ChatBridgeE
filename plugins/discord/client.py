@@ -144,5 +144,3 @@ class BotCommand(discord.Cog):
             else url,
         )
         await ctx.send(embed=embed)
-
-        # TODO: online command
