@@ -35,6 +35,11 @@ class Context:
                 loop=server.loop,
             )
 
+    def __str__(self) -> str:
+        return self.display_name
+
+    __repr__ = __str__
+
     async def emit(
         self,
         event: str,
@@ -90,6 +95,6 @@ class Context:
         await self.rcon.connect()
         try:
             return await self.rcon.execute(command)
-        except Exception as e:
+        except TimeoutError as e:
             if exc_timeout:
                 raise e

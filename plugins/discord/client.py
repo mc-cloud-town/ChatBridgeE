@@ -63,10 +63,12 @@ class Bot(commands.Bot):
         return contents
 
     async def on_message(self, msg: Message):
+        # call command handler
         if msg.channel.id in self.config.get(
             "command_channels", []
         ) or msg.channel.category_id in self.config.get("parents_for_command", []):
             asyncio.create_task(self.process_commands(msg), name="discord-command")
+            return
 
         author = msg.author
         if msg.channel.id != self.chat_channel or author == self.user or author.system:
@@ -120,7 +122,7 @@ class BotCommand(discord.Cog):
 
         plugin: Online = self.server.get_plugin(Online.__plugin_name__)
 
-        data = await plugin.connect()
+        data = await plugin.query()
         await ctx.send(data)
 
         # TODO: online command

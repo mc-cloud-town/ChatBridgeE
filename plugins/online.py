@@ -53,10 +53,6 @@ class Online(Plugin, config=OnlineConfig):
             return None
         return result
 
-    async def get_online(self) -> str:
-        for client in self.server.clients.values():
-            client
-
     async def query(self):
         result: dict[Context, set[str]] = {}
         minecraft_GList_match: dict[str, dict] = self.config.get(
@@ -80,7 +76,7 @@ class Online(Plugin, config=OnlineConfig):
                 if data := self.handle_bungee(res["data"]):
                     result.update(data)
 
-        for name, client in self.server.clients.copy().items():
+        for client in self.server.clients.values():
             if res := await client.execute_command("list"):
                 result.update({client: self.handle_minecraft(res["data"])})
 

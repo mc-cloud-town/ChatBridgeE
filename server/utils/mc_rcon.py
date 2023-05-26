@@ -117,10 +117,15 @@ class RconClientProtocol(Protocol):
 
         raise LoginError()
 
-    async def execute(self, command: str) -> RconPacketData:
+    async def execute(
+        self,
+        command: str,
+        *,
+        timeout: float | None = None,
+    ) -> RconPacketData:
         return await asyncio.wait_for(
             self._send(RconPacketType.COMMAND_EXECUTE, command),
-            timeout=self.timeout,
+            timeout=self.timeout if timeout is None else timeout,
         )
 
 
@@ -162,8 +167,8 @@ class RconClient:
     async def __aexit__(self, type, value, trace):
         self.disconnect()
 
-    def execute(self, command: str):
-        return self.protocol.execute(command)
+    def execute(self, command: str, *, timeout: float | None = None):
+        return self.protocol.execute(command, timeout=timeout)
 
 
 if __name__ == "__main__":
