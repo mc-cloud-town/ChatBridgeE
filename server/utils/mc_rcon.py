@@ -68,15 +68,15 @@ class RconClientProtocol(Protocol):
         (packet_id, packet_type) = struct.unpack("<ii", data[:8])
 
         if data[-2:] != b"\x00\x00":
-            print("Incorrect padding")
+            log.error("Incorrect padding")
         if packet_id == -1:
-            print("Login failed")
+            log.error("Login failed")
 
         # -1 is for 1 bytes Empty string terminator
         # Pocket body (At least 1 byte)
         packet_payload = data[8:-2].decode("utf-8")
 
-        log.info(f"read id: {packet_id};type: {packet_type};data: {packet_payload}")
+        log.debug(f"read id: {packet_id};type: {packet_type};data: {packet_payload}")
         self._wait_read.set_result(
             RconPacketData(
                 id=packet_id,
@@ -143,7 +143,7 @@ class RconClient:
     def is_connected(self):
         return self.protocol.is_connected()
 
-    async def connect(self, *, exception: bool = True) -> None:
+    async def connect(self, *, exception: bool = False) -> None:
         if self.is_connected:
             if exception:
                 raise Exception("Connection is already established")

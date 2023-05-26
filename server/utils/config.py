@@ -17,23 +17,16 @@ class Config(ABC):
 
     def __init__(self, **kwargs: Any) -> None:
         cls = self.__class__
-        attrs = []
+        self._attrs = []
 
         self.__config_file_path__ = kwargs.pop(
             "_config_path",
             Path(cls.__config_path__)
             / f"{cls.__config_name__}.{cls.__config_filetype__}",
         )
+        self._kwargs = kwargs
 
-        for name, value in cls.__dict__.items():
-            if name.startswith("_"):
-                continue
-
-            attrs.append(name)
-            setattr(self, name, kwargs.pop(name, value))
-
-        self._attrs = attrs
-        cls.__slots__ = attrs
+        self.reload()
 
     def __init_subclass__(
         cls,
@@ -52,6 +45,7 @@ class Config(ABC):
             yield key, self.get(key)
 
     def __getitem__(self, key: str) -> Any:
+        self.reload()
         return getattr(self, key)
 
     def get(self, key: str, default: Optional[None] = None) -> Optional[_T]:
@@ -87,20 +81,39 @@ class Config(ABC):
         file_type = _filetype or cls.__config_filetype__
         path = Path(_config_path) / f"{_name or cls.__config_name__}.{file_type}"
 
-        if path.is_file():
-            with open(path, "r") as f:
-                if file_type == "json":
-                    d = cls(**json.load(f), _config_path=path)
-                else:
-                    file_type = "yaml"
-                    d = cls(**yaml.load(f, Loader=yaml.FullLoader), _config_path=path)
-            d.save(file_type)
-            return d
+        if data := cls.load_data(path, file_type):
+            return cls(**data, _config_path=path)
 
         new_data = cls(**kwargs, _config_path=path)
         if _auto_create:
             new_data.save()
         return new_data
+
+    @classmethod
+    def load_data(cls, path: Path | str, file_type: str) -> dict | None:
+        if (path := Path(path)).is_file():
+            with open(path, "r") as f:
+                if file_type == "json":
+                    return json.load(f)
+                else:
+                    file_type = "yaml"
+                    return yaml.load(f, Loader=yaml.FullLoader)
+        else:
+            return None
+
+    def reload(self) -> None:
+        self._attrs = []
+        self._kwargs = self.load_data(
+            self.__config_file_path__,
+            self.__config_filetype__,
+        )
+
+        for name, value in self.__class__.__dict__.items():
+            if name.startswith("_"):
+                continue
+
+            self._attrs.append(name)
+            setattr(self, name, self._kwargs.pop(name, value))
 
     def save(
         self,

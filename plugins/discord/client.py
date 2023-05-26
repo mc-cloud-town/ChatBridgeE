@@ -11,7 +11,7 @@ from server import Plugin
 from server.utils.format import FormatMessage
 
 
-class Bot(discord.Bot):
+class Bot(commands.Bot):
     def __init__(self, plugin: Plugin, loop: AbstractEventLoop | None = None):
         super().__init__(
             command_prefix=plugin.config.get("prefix"),
@@ -28,6 +28,7 @@ class Bot(discord.Bot):
             f"[red]py-cord version: [/red][cyan]{discord.__version__}[/cyan]",
             extra=dict(markup=True),
         )
+        self.add_cog(BotCommand(self))
 
     @property
     def chat_channel(self) -> int | None:
@@ -62,6 +63,11 @@ class Bot(discord.Bot):
         return contents
 
     async def on_message(self, msg: Message):
+        if msg.channel.id in self.config.get(
+            "command_channels", []
+        ) or msg.channel.category_id in self.config.get("parents_for_command", []):
+            asyncio.create_task(self.process_commands(msg), name="discord-command")
+
         author = msg.author
         if msg.channel.id != self.chat_channel or author == self.user or author.system:
             return
@@ -96,6 +102,15 @@ class Bot(discord.Bot):
         except discord.NotFound:
             return None
 
+
+class BotCommand(discord.Cog):
+    def __init__(self, bot: Bot) -> None:
+        self.bot = bot
+        self.log = bot.log
+        self.plugin = bot.plugin
+        self.config = bot.config
+        self.server = bot.server
+
     @commands.command()
     async def online(self, ctx: ApplicationContext):
         try:
@@ -105,6 +120,7 @@ class Bot(discord.Bot):
 
         plugin: Online = self.server.get_plugin(Online.__plugin_name__)
 
-        plugin
+        data = await plugin.connect()
+        await ctx.send(data)
 
         # TODO: online command

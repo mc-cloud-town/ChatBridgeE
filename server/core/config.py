@@ -25,7 +25,7 @@ class UserData(NamedTuple):
 
 class ConfigType(NamedTuple):
     stop_plugins: list[str] = "plugins"
-    users: Dict[str, UserAuth] = {}
+    users: Dict[str, UserAuth] = {}  # dict[name, UserAuth]
     plugins_path: str = []
 
 
@@ -44,7 +44,7 @@ class Config(Generic[_RT]):
         if default_config is None:
             self.default_config = ConfigType(
                 stop_plugins=[],
-                users={"ClientName": UserAuth("ClientPassword", "生存服")._asdict()},
+                users={"Survival": UserAuth("SurvivalPassword", "生存服")._asdict()},
                 plugins_path="plugins",
             )
 

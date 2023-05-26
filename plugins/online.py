@@ -1,6 +1,6 @@
 import re
 
-from server import BaseServer, Plugin
+from server import BaseServer, Context, Plugin
 from server.utils import Config, RconClient
 
 minecraft_list_match = re.compile(
@@ -11,7 +11,7 @@ minecraft_GList_match = re.compile(r"\[(.*)\] \(\d*\):((?:[a-zA-Z0-9_]*[ ,]?)+)"
 
 class OnlineConfig(Config):
     online_enabled = True
-    query_online_names = ["Server"]
+    query_online_names = ["Survival"]
     bungeecord_list = {
         "BungeecordA": {
             "address": "127.0.0.1",
@@ -30,12 +30,10 @@ class Online(Plugin, config=OnlineConfig):
     # >=1.16 There are 3 of a max of 50 players online: A, B, C
     @staticmethod
     def handle_minecraft(data: str) -> set[str]:
-        result = set[str]()
-
         if parsed := minecraft_list_match.match(data):
-            result = set(parsed.group(1).strip().split(" "))
+            return set(parsed.group(1).strip().split(" "))
 
-        return result
+        return set()
 
     # [Creative] (2): A, B
     # [Survival] (4): A, B, C, D
@@ -55,15 +53,12 @@ class Online(Plugin, config=OnlineConfig):
             return None
         return result
 
-    async def query(self) -> list[str]:
-        ...
-
     async def get_online(self) -> str:
         for client in self.server.clients.values():
             client
 
-    async def connect(self):
-        result: dict[str, set[str]] = {}
+    async def query(self):
+        result: dict[Context, set[str]] = {}
         minecraft_GList_match: dict[str, dict] = self.config.get(
             "minecraft_GList_match",
             {},
@@ -85,23 +80,19 @@ class Online(Plugin, config=OnlineConfig):
                 if data := self.handle_bungee(res["data"]):
                     result.update(data)
 
-        for name, client in self.server.clients.items():
+        for name, client in self.server.clients.copy().items():
             if res := await client.execute_command("list"):
-                result.update({name: self.handle_minecraft(res["data"])})
+                result.update({client: self.handle_minecraft(res["data"])})
 
         return {
             k: v
             for k, v in result.items()
-            if k in self.config.get("query_online_names", [])
+            if k.user.name in self.config.get("query_online_names", [])
         }
-
-    def on_load(self) -> None:
-        self.loop.create_task(self.connect())
 
     def on_unload(self) -> None:
         for client in self._glist_rcon_catch.values():
             client.disconnect()
-        return super().on_unload()
 
 
 def setup(server: BaseServer):

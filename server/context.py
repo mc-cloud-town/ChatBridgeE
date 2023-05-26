@@ -6,7 +6,7 @@ from .utils import MISSING
 
 if TYPE_CHECKING:
     from . import BaseServer
-    from .core.config import UserAuth
+    from .core.config import UserData
 
 __all__ = ("Context",)
 
@@ -16,7 +16,7 @@ class Context:
         self,
         server: "BaseServer",
         sid: str,
-        user: "UserAuth",
+        user: "UserData",
         auth: dict = {},
     ) -> None:
         self.sid = sid
@@ -87,7 +87,7 @@ class Context:
         if not self.rcon:
             return ...
 
-        await self.rcon.connect(exception=False)
+        await self.rcon.connect()
         try:
             return await self.rcon.execute(command)
         except Exception as e:

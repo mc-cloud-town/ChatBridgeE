@@ -18,8 +18,8 @@ class ClientInfo(NoMissingFieldSerializable):
 
 
 class ChatBridgeEConfig(Serializable):
-    name: str = "ClientName"
-    password: str = "ClientPassword"
+    name: str = "Survival"
+    password: str = "SurvivalPassword"
     server_hostname: str = "127.0.0.1"
     server_port: int = 8081
 
