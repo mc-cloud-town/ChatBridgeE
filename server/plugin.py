@@ -13,7 +13,6 @@ from .errors import (
     ExtensionAlreadyLoaded,
     ExtensionError,
     ExtensionNotFound,
-    ExtensionPluginNotFond,
     NoEntryPointError,
 )
 from .utils import MISSING
@@ -223,9 +222,7 @@ class PluginMixin:
         if name in self.__extensions:
             raise ExtensionAlreadyLoaded(name)
         # is not fond
-        elif (spec := import_util.find_spec(name)) is None:
-            raise ExtensionPluginNotFond(name)
-        elif spec.has_location:
+        elif (spec := import_util.find_spec(name)) and spec.has_location:
             lib = import_util.module_from_spec(spec)
             sys.modules[name] = lib
 

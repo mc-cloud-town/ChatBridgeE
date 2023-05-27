@@ -20,10 +20,7 @@ def main():
     asyncio.set_event_loop(loop := asyncio.new_event_loop())
 
     ser = Server(loop=loop)
-    ser.load_plugin(
-        "plugins",
-        block_plugin=ser.config.get("stop_plugins"),
-    )
+    ser.load_plugin("server.plugins", block_plugin=ser.config.get("stop_plugins"))
 
     async def prompt_align():
         session = PromptSession(
