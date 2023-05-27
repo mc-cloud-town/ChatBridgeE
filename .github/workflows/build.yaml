@@ -22,8 +22,7 @@ jobs:
           cd ..
           mkdir -p tmp/server && cp -R server tmp
           cp server.py tmp/__main__.py
-          zip -r server.pyz tmp || echo "build to zip error"
-          # mv server.zip server.pyz
+          cd tmp && zip -r server.pyz * && cp server.pyz .. && cd ..
 
           cd plugins
           zip -r plugins * || echo "build to zip e rror"
