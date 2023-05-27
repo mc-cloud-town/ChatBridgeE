@@ -20,7 +20,7 @@ jobs:
           cp chatbridgee.mcdr ..
 
           cd ..
-          zip -r server * || echo "build to zip error"
+          zip -r server server/* || echo "build to zip error"
           cp server.py README.md server
           mv server/server.py __main__.py
           mv server.zip server.pyz
