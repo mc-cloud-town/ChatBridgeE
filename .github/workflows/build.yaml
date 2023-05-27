@@ -19,10 +19,10 @@ jobs:
           mv chatbridgee.zip chatbridgee.mcdr
           cp chatbridgee.mcdr ..
 
+          mv server.py __main__.py
           cd ../server
           zip -r server server/* || echo "build to zip error"
-          cp ../server.py ../README.md .
-          mv server.py __main__.py
+          zip -f server __main__.py
           mv server.zip server.pyz
           cp server.pyz ..
 
