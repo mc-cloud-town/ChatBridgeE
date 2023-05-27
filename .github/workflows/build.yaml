@@ -19,6 +19,7 @@ jobs:
           mv chatbridgee.zip chatbridgee.mcdr
           cp chatbridgee.mcdr ..
 
+          cd ..
           zip -r server * || echo "build to zip error"
           mv server.zip server.pyz
 
