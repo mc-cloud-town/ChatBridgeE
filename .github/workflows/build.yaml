@@ -21,7 +21,7 @@ jobs:
 
           cd ../server
           zip -r server server/* || echo "build to zip error"
-          cp server.pyz ..
+          cp server.zip ..
           cd ..
           mv server.py __main__.py
           zip -f server __main__.py
