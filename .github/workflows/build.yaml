@@ -24,7 +24,7 @@ jobs:
           zip -r server server || echo "build to zip error"
           mv server.zip server.pyz
 
-          cd ../plugins
+          cd plugins
           zip -r plugins * || echo "build to zip e rror"
           cp plugins.zip ..
 
