@@ -7,7 +7,10 @@ __all__ = ("Server",)
 class Server(BaseServer):
     def __init__(self, loop: AbstractEventLoop | None = None):
         super().__init__(loop=loop)
-        self.load_plugin(f"{__package__}.base_plugin")
+
+        from .base_plugin import setup
+
+        setup(self)
 
     async def on_ping(self, ctx: Context):
         await ctx.emit("server_pong")
