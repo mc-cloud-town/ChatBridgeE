@@ -70,7 +70,6 @@ class Bot(commands.Bot):
             "command_channels", []
         ) or msg.channel.category_id in self.config.get("parents_for_command", []):
             asyncio.create_task(self.process_commands(msg), name="discord-command")
-            return
 
         author = msg.author
         if msg.channel.id != self.chat_channel or author == self.user or author.system:
