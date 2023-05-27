@@ -20,9 +20,10 @@ jobs:
           cp chatbridgee.mcdr ..
 
           cd ..
-          cp server.py server/__main__.py
-          zip -r server server || echo "build to zip error"
-          mv server.zip server.pyz
+          mkdir -p tmp/server && cp -R server tmp
+          cp server.py tmp/__main__.py
+          zip -r server.pyz tmp || echo "build to zip error"
+          # mv server.zip server.pyz
 
           cd plugins
           zip -r plugins * || echo "build to zip e rror"
