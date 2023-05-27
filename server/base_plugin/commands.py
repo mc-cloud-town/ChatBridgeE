@@ -80,7 +80,7 @@ class BasePlugin_Commands(BasePlugin, description="指令處理"):
             print("請輸入訊息")
             return
 
-        await self.server.send(message, server_name="終端伺服器")
+        await self.server.send(message, server_name="終端伺服器", no_mark=True)
 
 
 def setup(server: BaseServer):

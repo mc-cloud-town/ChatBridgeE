@@ -32,6 +32,10 @@ flowchart LR
   server <--> client & plugins & cli
 ```
 
+## 警告
+
+由於採用明文傳輸，請於防火牆中關閉 `8081` 或是您所設定的端口，在傳輸中可能會包含 `RCON 密碼/端口` 等私密信息，請做好安全防範。
+
 ## 參考
 
 1. [`discord.py cog load method`](https://github.com/Rapptz/discord.py)

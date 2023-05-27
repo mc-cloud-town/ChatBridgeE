@@ -153,7 +153,6 @@ class Plugin(metaclass=PluginMeta):
 
 class PluginMixin:
     def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
         self.__extensions: dict[str, ModuleType] = {}
         self.__plugins: dict[str, Plugin] = {}
 

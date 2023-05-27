@@ -11,7 +11,7 @@ from .core.command import CommandCompleter
 
 
 def main():
-    log = init_logging()
+    log = init_logging(level="INFO")
     log.info(
         f"[red]python version: [/red][cyan]{platform.python_version()}[/cyan]",
         extra=dict(markup=True),

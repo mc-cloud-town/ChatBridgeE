@@ -8,11 +8,9 @@ from typing import Any, Callable, Coroutine, List, Optional, TypeVar, Union
 from aiohttp import web
 from socketio import AsyncServer
 
-from server.utils.format import FormatMessage
-
 from ..context import Context
 from ..plugin import PluginMixin
-from ..utils import MISSING
+from ..utils import MISSING, FormatMessage
 from . import CommandManager
 from .config import Config, UserData
 
@@ -86,6 +84,7 @@ class BaseServer(PluginMixin):
 
     def dispatch(self, event_name: str, *args: Any, **kwargs: Any) -> None:
         method = f"on_{event_name}"
+        log.debug(f"Dispatching event {event_name!r}, {args}, {kwargs}")
 
         try:
             coro = getattr(self, method)
@@ -154,6 +153,9 @@ class BaseServer(PluginMixin):
     async def on_disconnect(self, ctx: Context):
         pass
 
+    async def on_cmd_callback(self, ctx: Context, result: str):
+        pass
+
     def __handle_events(self) -> None:
         sio_server = self.sio_server
 
@@ -175,6 +177,7 @@ class BaseServer(PluginMixin):
         @sio_server.event
         async def disconnect(sid: str) -> None:
             if (client := self.clients.pop(sid, None)) is None:
+                del client  # run delete func，remove client event handler
                 return
 
             self.dispatch("disconnect", client)
@@ -195,7 +198,7 @@ class BaseServer(PluginMixin):
     async def start(self) -> web.AppRunner:
         runner = web.AppRunner(self.app)
         await runner.setup()
-        port = int(self.config.get("port") or os.getenv("PORT") or 8081)
+        port = int(self.config.get("port", os.getenv("PORT")))
         site = web.TCPSite(runner, "localhost", port)
         await site.start()
 
@@ -218,6 +221,13 @@ class BaseServer(PluginMixin):
                 )
         except TypeError:
             pass
+
+        return None
+
+    def get_client(self, name: str) -> Optional[Context]:
+        for client in self.clients.values():
+            if client.user.name == name:
+                return client
 
         return None
 
@@ -261,12 +271,15 @@ class BaseServer(PluginMixin):
         elif isinstance(msg, (list, tuple)):
             msg = FormatMessage(*msg, no_mark=no_mark)
 
+        if server_name:
+            msg = FormatMessage(f" {server_name}: ", msg)
+
         if isinstance(msg, FormatMessage):
             msg = msg.__dict__
 
         await self.sio_server.emit(
             event="chat",
-            data=(server_name, msg),
+            data=msg,
             to=to,
             room=room,
             skip_sid=skip_sid if type(skip_sid) is list else [skip_sid],

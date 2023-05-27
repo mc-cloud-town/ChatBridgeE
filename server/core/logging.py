@@ -167,7 +167,7 @@ def init_logging(
     log.addHandler(file_handler)
     log.addHandler(
         RichHandler(
-            level=logging.INFO,
+            level=level,
             rich_tracebacks=True,
             log_time_format="[%X]",
             show_path=False,

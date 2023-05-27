@@ -1,8 +1,8 @@
+from asyncio import Future
+import asyncio
 from typing import TYPE_CHECKING, Any, Callable, List, Optional, Union
 
-from server.utils import RconClient
-
-from .utils import MISSING
+from .utils import MISSING, RconClient
 
 if TYPE_CHECKING:
     from . import BaseServer
@@ -24,9 +24,12 @@ class Context:
         self.log = server.log
         self.user = user
         self.auth = auth
+        self._extra_command_wait: dict[str, list[Future[dict]]] = {}
+        self.server.add_listener(self._cmd_callback_callback, name="cmd_callback")
 
         self.rcon: RconClient | None = None
 
+        # check rcon config is valid
         if isinstance(rcon := self.auth.get("rcon"), dict):
             self.rcon = RconClient(
                 host=rcon.get("ip", None),
@@ -40,6 +43,28 @@ class Context:
 
     __repr__ = __str__
 
+    async def _cmd_callback_callback(self, ctx: "Context", result: dict) -> None:
+        if not (command := result.get("command")):
+            self.log.error("extra_command_callback: command is missing")
+            return
+
+        for wait in self._extra_command_wait.get(command, []):
+            wait.set_result(result)
+
+    async def extra_command(
+        self,
+        command: str,
+        *,
+        timeout: float | None = None,
+    ) -> dict:
+        """call MCDR client extra command"""
+        await self.emit("extra_command", command)
+
+        wait = Future[dict](loop=self.server.loop)
+        self._extra_command_wait[command] = wait
+
+        return await asyncio.wait_for(wait, timeout=timeout)
+
     async def emit(
         self,
         event: str,
@@ -51,6 +76,7 @@ class Context:
         callback: Optional[Callable[..., Any]] = None,
         **kwargs: Any,
     ) -> None:
+        """emit event to client"""
         await self.server.sio_server.emit(
             event=event,
             data=data,
@@ -69,6 +95,7 @@ class Context:
         namespace: Optional[str] = None,
         ignore_queue: bool = False,
     ) -> None:
+        """disconnect client"""
         await self.server.sio_server.disconnect(
             sid=self.sid if sid is MISSING else sid,
             namespace=namespace,
@@ -77,18 +104,11 @@ class Context:
 
     @property
     def display_name(self) -> str:
+        """get user display name"""
         return self.user.display_name or self.user.name
 
-    async def setup_rcon(self) -> None:
-        if not (rcon := self.rcon):
-            raise Exception("client no give rcon auth data")
-
-        if rcon.is_connected:
-            return
-
-        await rcon.connect()
-
     async def execute_command(self, command: str, exc_timeout: bool = True):
+        """execute command on rcon"""
         if not self.rcon:
             return ...
 
@@ -98,3 +118,9 @@ class Context:
         except TimeoutError as e:
             if exc_timeout:
                 raise e
+
+    def __del__(self) -> None:
+        self.server.remove_listener(
+            self._cmd_callback_callback,
+            name="cmd_callback",
+        )

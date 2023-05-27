@@ -27,6 +27,7 @@ class ConfigType(NamedTuple):
     stop_plugins: list[str] = "plugins"
     users: Dict[str, UserAuth] = {}  # dict[name, UserAuth]
     plugins_path: str = []
+    port: str = 8081
 
 
 class Config(Generic[_RT]):

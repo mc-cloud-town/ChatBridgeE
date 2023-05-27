@@ -42,11 +42,12 @@ class ReadClient:
         self.sio.on("player_chat", self.on_player_chat)
         self.sio.on("player_joined", self.on_player_joined)
         self.sio.on("player_left", self.on_player_left)
+        self.sio.on("extra_command", self.on_extra_command)
 
     def say(self, msg: str) -> None:
         self.server.say(msg)
 
-    def on_chat(self, server_name: str, msg: dict):
+    def on_chat(self, msg: dict):
         data = RTextJSON(msg)
 
         self.server.say(data)
@@ -87,19 +88,20 @@ class ReadClient:
     # stats:
     #   success>
     #     code: 0
-    #   unknown stat>
+    #   unknown stats>
     #     code: 1
     #   no stats_helper>
     #     code: 2
     #
     # <unknown command>
     #   code: -1
-    def on_command(self, command: str):
-        if command.startswith("!!stats "):
+    def on_extra_command(self, command: str):
+        result = {"command": command}
+        if command.startswith("stats "):
             try:
                 import stats_helper  # pyright: ignore
             except (ImportError, ModuleNotFoundError):
-                result = {"code": 2}
+                result.update({"code": 2})
             else:
                 try:
                     _, type, cls, target = (
@@ -120,16 +122,18 @@ class ReadClient:
 
                 if res_raw is not None:
                     lines = res_raw.splitlines()
-                    result = {
-                        "code": 0,
-                        "stats_name": lines[0],
-                        "data": lines[1:-1],
-                        "total": int(lines[-1].split(" ")[1]),
-                    }
+                    result.update(
+                        {
+                            "code": 0,
+                            "stats_name": lines[0],
+                            "data": lines[1:-1],
+                            "total": int(lines[-1].split(" ")[1]),
+                        }
+                    )
                 else:
-                    result = {"code": 1}
+                    result.update({"code": 1})
 
-        self.sio.call("command_callback", result)
+        self.sio.call("cmd_callback", result)
 
     def from_server(
         self,

@@ -10,7 +10,7 @@ from discord.ext import commands
 from rich.text import Text
 
 from server import Plugin
-from server.utils.format import FormatMessage
+from server.utils import FormatMessage, format_number
 
 
 class Bot(commands.Bot):
@@ -114,6 +114,47 @@ class BotCommand(discord.Cog):
         self.plugin = bot.plugin
         self.config = bot.config
         self.server = bot.server
+
+    @commands.command()
+    async def stats(self, ctx: ApplicationContext, *args):
+        # TODO add stats command
+        if not (client_name := self.config.get("client_to_query_stats", None)):
+            return
+        if not (client := self.server.get_client(client_name)):
+            return
+
+        result = await client.extra_command(f"stats {' '.join(args)}")
+
+        # stats:
+        #   success> code: 0
+        #   unknown stats> code: 1
+        #   no stats_helper> code: 2
+        if (code := result.get("code", 2)) == 0:
+            embed = Embed(color=Color.blue(), timestamp=datetime.now())
+            ranks, players, values = [], [], []
+
+            for line in result.get("data", []):
+                line: str
+                rank, player, value = line.split(" ")
+
+                ranks.append(rank)
+                players.append(player)
+                values.append(value)
+
+            embed.set_author(
+                name=f"統計排名-{result.get('stats_name', '錯誤')}",
+                icon_url=ctx.guild.icon,
+            )
+            embed.add_field(name="排名", value="\n".join(ranks))
+            embed.add_field(name="玩家", value="\n".join(players))
+            embed.add_field(name="數值", value="\n".join(values))
+            embed.set_footer(text=f"總計: {format_number(result.get('total', -1))}")
+
+            await ctx.send(embed=embed)
+        elif code == 1:
+            await ctx.send("未知的 stats 名稱")
+        elif code == 2:
+            await ctx.send("未啟用 stats_helper 插件，無法查詢 stats")
 
     @commands.command()
     async def online(self, ctx: ApplicationContext):
