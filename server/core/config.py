@@ -24,9 +24,11 @@ class UserData(NamedTuple):
 
 
 class ConfigType(NamedTuple):
-    stop_plugins: list[str] = "plugins"
-    users: Dict[str, UserAuth] = {}  # dict[name, UserAuth]
-    plugins_path: str = []
+    stop_plugins: list[str] = []
+    users: Dict[str, UserAuth] = {
+        "Survival": UserAuth("SurvivalPassword", "生存服")._asdict()
+    }  # dict[name, UserAuth]
+    plugins_path: str = "plugins"
     port: str = 8081
 
 
@@ -43,11 +45,7 @@ class Config(Generic[_RT]):
         self.filepath = self.directory / f"{config_name}.{config_type}"
 
         if default_config is None:
-            self.default_config = ConfigType(
-                stop_plugins=[],
-                users={"Survival": UserAuth("SurvivalPassword", "生存服")._asdict()},
-                plugins_path="plugins",
-            )
+            self.default_config = ConfigType()
 
         self.check_config()
 
