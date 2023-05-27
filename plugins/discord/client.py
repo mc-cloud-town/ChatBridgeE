@@ -117,7 +117,6 @@ class BotCommand(discord.Cog):
 
     @commands.command()
     async def stats(self, ctx: ApplicationContext, *args):
-        # TODO add stats command
         if not (client_name := self.config.get("client_to_query_stats", None)):
             return
         if not (client := self.server.get_client(client_name)):
