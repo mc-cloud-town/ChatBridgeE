@@ -1,4 +1,5 @@
 import re
+from typing import overload
 
 from server import BaseServer, Context, Plugin
 from server.utils import Config, RconClient
@@ -53,7 +54,14 @@ class Online(Plugin, config=OnlineConfig):
             return None
         return result
 
-    async def query(self):
+    # fmt: off
+    @overload
+    async def query(self, *, order = True) -> list[tuple[Context, set[str]]]:  ...  # noqa: E
+    @overload
+    async def query(self, *, order=False) -> dict[Context, set[str]]:  ...  # noqa: E
+    # fmt: on
+
+    async def query(self, *, order: bool = False):
         result: dict[Context, set[str]] = {}
         minecraft_GList_match: dict[str, dict] = self.config.get(
             "minecraft_GList_match",
@@ -72,13 +80,25 @@ class Online(Plugin, config=OnlineConfig):
             self._glist_rcon_catch[name] = rcon
             await rcon.connect()
 
-            if res := await rcon.execute("glist"):
-                if data := self.handle_bungee(res["data"]):
-                    result.update(data)
+            if (res := await rcon.execute("glist")) and (
+                data := self.handle_bungee(res["data"])
+            ):
+                for id, value in data.items():
+                    result.update({self.server.get_client(id): value})
 
         for client in self.server.clients.values():
             if res := await client.execute_command("list"):
                 result.update({client: self.handle_minecraft(res["data"])})
+
+        if order:
+            ret = []
+            for id in self.config.get("query_online_names", []):
+                for ctx, value in result.copy().items():
+                    if id == ctx.user.name:
+                        ret.append((ctx, value))
+                        result.pop(ctx)
+                        break
+            return ret
 
         return {
             k: v

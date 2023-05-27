@@ -162,18 +162,15 @@ class BotCommand(discord.Cog):
             return await ctx.send("未啟用 Online 插件")
 
         plugin: Online = self.server.get_plugin(Online.__plugin_name__)
-        data = await plugin.query()
+        data = await plugin.query(order=True)
         embed = Embed(color=Color.blue(), timestamp=datetime.now())
 
         embed.add_field(
-            name=f"成員列表 ({reduce(lambda x, y: x + y, map(len, data.values()))})",
+            name=f"成員列表 ({reduce(lambda x, y: x + y, map(lambda x: len(x[1]), data))})",
             value="\n".join(
-                [
-                    f"- [{k.display_name}]({len(v)}): {', '.join(v)}"
-                    for k, v in data.items()
-                ]
+                [f"- [{k.display_name}]({len(v)}): {', '.join(v)}" for k, v in data]
             )
-            + f"\n\n總伺服器數: {len(data.keys())}",
+            + f"\n\n總伺服器數: {len(data)}",
         )
 
         embed.set_author(
