@@ -66,7 +66,7 @@ class Config(ABC):
         return json.dumps(self, default=lambda _: dict(self))
 
     def yaml_str(self) -> str:
-        return yaml.dump(self.json())
+        return yaml.dump(self.json(), allow_unicode=True)
 
     @classmethod
     def load(
@@ -113,7 +113,8 @@ class Config(ABC):
                 continue
 
             self._attrs.append(name)
-            setattr(self, name, self._kwargs.pop(name, value))
+            value = self._kwargs.pop(name, value) if self._kwargs else value
+            setattr(self, name, value)
 
     def save(
         self,
@@ -130,8 +131,8 @@ class Config(ABC):
         if not (parent := path.parent).is_dir():
             parent.mkdir(parents=True)
 
-        with open(path, "w") as f:
+        with open(path, "w", encoding="utf-8") as f:
             if config_type == "json":
                 json.dump(self, f, default=lambda _: dict(self))
             else:
-                yaml.dump(self.json(), f)
+                yaml.dump(self.json(), f, allow_unicode=True, indent=2)
