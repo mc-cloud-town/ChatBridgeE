@@ -158,10 +158,13 @@ class BotCommand(discord.Cog):
     async def online(self, ctx: ApplicationContext):
         try:
             from plugins.online import Online
+
+            if (plugin := self.server.get_plugin(Online.__plugin_name__)) is None:
+                raise Exception
+            plugin: Online
         except Exception:
             return await ctx.send("未啟用 Online 插件")
 
-        plugin: Online = self.server.get_plugin(Online.__plugin_name__)
         data = await plugin.query(order=True)
         embed = Embed(color=Color.blue(), timestamp=datetime.now())
 

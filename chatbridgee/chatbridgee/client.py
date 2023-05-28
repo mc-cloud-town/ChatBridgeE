@@ -1,9 +1,9 @@
-from pathlib import Path
 import time
+from pathlib import Path
+from threading import Lock
 from typing import Union
 
 import socketio
-from socketio import exceptions
 from mcdreforged.api.all import (
     CommandSource,
     Info,
@@ -13,12 +13,14 @@ from mcdreforged.api.all import (
     ServerInterface,
     new_thread,
 )
+from socketio import exceptions
 
 from .config import ChatBridgeEConfig
 from .read import ReadClient
 
 META = ServerInterface.get_instance().as_plugin_server_interface().get_self_metadata()
 sio = socketio.Client()
+cb_lock = Lock()
 
 
 def tr(key: str, *args, **kwargs) -> RTextBase:
@@ -99,27 +101,30 @@ def on_load(server: PluginServerInterface, old_module):
 
     @new_thread("chatbridge-start")
     def start():
-        auth = config.client_info
-        try:
-            sio.connect(
-                f"http://{config.server_address}",
-                auth={"name": auth.name, "password": auth.password, **auth_else},
-            )
-            sio.wait()
-        except exceptions.ConnectionError:
-            server.logger.error(
-                f"Unable to connect to server {config.server_address}\n"
-                "Will try again in 10s"
-            )
-            time.sleep(10)
-            start()
+        with cb_lock:
+            auth = config.client_info
+            try:
+                sio.connect(
+                    f"http://{config.server_address}",
+                    auth={"name": auth.name, "password": auth.password, **auth_else},
+                )
+                sio.wait()
+            except exceptions.ConnectionError:
+                server.logger.error(f"無法連接到 {config.server_address}\n五秒後重試")
+                time.sleep(5)
+                start()
+            except TimeoutError:
+                server.logger.error(f"連線到 {config.server_address} 超時\n五秒後重試")
+                time.sleep(5)
+                start()
 
     start()
 
 
 @new_thread("chatbridge-disconnect")
 def on_unload(server: PluginServerInterface):
-    sio.disconnect()
+    with cb_lock:
+        sio.disconnect()
 
 
 def on_server_start(server: PluginServerInterface):

@@ -11,7 +11,7 @@ from .core.command import CommandCompleter
 
 
 def main():
-    log = init_logging(level="INFO")
+    log = init_logging(level="DEBUG")
     log.info(
         f"[red]python version: [/red][cyan]{platform.python_version()}[/cyan]",
         extra=dict(markup=True),
@@ -20,10 +20,6 @@ def main():
     asyncio.set_event_loop(loop := asyncio.new_event_loop())
 
     ser = Server(loop=loop)
-    ser.load_plugin(
-        "plugins",
-        block_plugin=ser.config.get("stop_plugins"),
-    )
 
     async def prompt_align():
         session = PromptSession(

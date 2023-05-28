@@ -3,13 +3,14 @@ import inspect
 import logging
 import os
 from asyncio import AbstractEventLoop
+from pathlib import Path
 from typing import Any, Callable, Coroutine, List, Optional, TypeVar, Union
 
 from aiohttp import web
 from socketio import AsyncServer
 
 from ..context import Context
-from ..plugin import PluginMixin
+from ..plugin import PluginMixin, SoloSetup
 from ..utils import MISSING, FormatMessage
 from . import CommandManager
 from .config import Config, UserData
@@ -39,6 +40,7 @@ class BaseServer(PluginMixin):
         self.command_manager = CommandManager(self)
         self.log = log
         self.config = Config("chatbridgee-config", config_type=config_type)
+        self.plugins_dir = self.config.get("plugins_path")
 
         self.sio_server.attach(self.app)
         self.__handle_events()
@@ -171,11 +173,10 @@ class BaseServer(PluginMixin):
                 await self.sio_server.disconnect(sid)
                 return
 
-            if self.get_client(user):
+            if old_user := self.get_client(user.name):
                 log.info(f"客戶端重複登入 {sid}:{user}")
-                await self.sio_server.emit("error", "重複登入", room=sid)
-                await self.sio_server.disconnect(sid)
-                return
+                await old_user.emit("error", "重複登入", room=sid)
+                await old_user.disconnect()
 
             self.log.debug(f"客戶端登入成功 {user.name}")
             self.clients[sid] = (ctx := self.create_context(sid, user, auth))
@@ -294,3 +295,24 @@ class BaseServer(PluginMixin):
             callback=callback,
             **kwargs,
         )
+
+    def load_extension(self, name: str | Path | SoloSetup) -> None:
+        setup = self.setup_from_name(name)
+        setup.setup_func()
+
+        self.config.remove("stop_plugins", name)
+        return super().load_extension(setup)
+
+    def unload_extension(self, name: str | Path | SoloSetup) -> None:
+        setup = self.setup_from_name(name)
+        setup.setup_func()
+
+        self.config.append("stop_plugins", name, only_one=True)
+        return super().unload_extension(setup)
+
+    def reload_extension(self, name: str | Path | SoloSetup) -> None:
+        setup = self.setup_from_name(name)
+        setup.setup_func()
+
+        self.load_extension(setup)
+        self.unload_extension(setup)

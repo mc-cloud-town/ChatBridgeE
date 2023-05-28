@@ -1,4 +1,6 @@
 from asyncio import AbstractEventLoop
+from pathlib import Path
+
 from . import BaseServer, Context
 
 __all__ = ("Server",)
@@ -8,9 +10,16 @@ class Server(BaseServer):
     def __init__(self, loop: AbstractEventLoop | None = None):
         super().__init__(loop=loop)
 
-        from .base_plugin import setup
+        from .base_plugin import setup as base_setup
 
-        setup(self)
+        base_setup(self)
+
+        path = Path(self.config.get("plugins_path"))
+        for file in path.glob("[!_]*"):
+            if self.setup_from_name(file).name in self.config.get("stop_plugins"):
+                continue
+
+            self.load_extension(file)
 
     async def on_ping(self, ctx: Context):
         await ctx.emit("server_pong")

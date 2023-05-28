@@ -1,20 +1,16 @@
 from __future__ import annotations
 
-import importlib
 import inspect
 import logging
 import sys
+from enum import Enum, auto
 from importlib import util as import_util
+from importlib.machinery import ModuleSpec
 from pathlib import Path
 from types import ModuleType
 from typing import TYPE_CHECKING, Any, Callable, ClassVar, Optional, Self, Type
 
-from .errors import (
-    ExtensionAlreadyLoaded,
-    ExtensionError,
-    ExtensionNotFound,
-    NoEntryPointError,
-)
+from .errors import ExtensionAlreadyLoaded, ExtensionNotFound, NoEntryPointError
 from .utils import MISSING
 from .utils.config import Config
 
@@ -151,9 +147,9 @@ class Plugin(metaclass=PluginMeta):
 
 
 class PluginMixin:
-    def __init__(self, *args, **kwargs) -> None:
-        self.__extensions: dict[str, ModuleType] = {}
+    def __init__(self) -> None:
         self.__plugins: dict[str, Plugin] = {}
+        self.__setup: dict[str, SoloSetup] = {}
 
     @property
     def plugins(self) -> dict[str, Plugin]:
@@ -168,8 +164,7 @@ class PluginMixin:
                 raise ExtensionAlreadyLoaded(name)
             self.remove_plugin(name)
 
-        plugin = plugin._inject(self)
-        self.__plugins[name] = plugin
+        self.__plugins[name] = plugin._inject(self)
 
     def get_plugin(self, name: str) -> Optional[Plugin]:
         return self.__plugins.get(name)
@@ -178,101 +173,136 @@ class PluginMixin:
         if (plugin := self.__plugins.pop(name, None)) is not None:
             plugin._eject(self)
 
-            return plugin
+        return plugin
 
-        return None
+    def load_extension(self, name: str | Path | SoloSetup) -> None:
+        self.load_from_setup(self.setup_from_name(name))
 
-    def unload_extension(self, name: str, package: Optional[str] = None) -> None:
-        name = self._resolve_name(name, package=package)
-
-        if (module := self.__extensions.pop(name, None)) is None:
+    def unload_extension(self, name: str | Path | SoloSetup) -> None:
+        name = self.setup_from_name(name)
+        if (module := self.__setup.pop(name.name, None)) is None:
             raise ExtensionNotFound(name)
 
         for plugin_name, plugin in self.__plugins.copy().items():
-            if _is_submodule(module.__name__, plugin.__module__):
+            if _is_submodule(module.name, plugin.__module__):
                 self.remove_plugin(plugin_name)
 
-        self._module_finalizer(module, name)
+        module.unload(self)
 
-    def _module_finalizer(self, lib: ModuleType, key: str) -> None:
-        self.__extensions.pop(key, None)
-        sys.modules.pop(key, None)
+    def setup_from_name(self, name: str | Path | SoloSetup) -> SoloSetup:
+        if isinstance(name, SoloSetup):
+            return name
 
-        for module in sys.modules.copy().keys():
-            if _is_submodule(lib.__name__.removesuffix(".main"), module):
-                log.debug(
-                    f"Remove module {module} when unloading plugin {repr(self)}, "
-                    f"success={sys.modules.pop(module, None)}"
+        if isinstance(name, Path):
+            if name.is_file() and name.suffix == ".py":
+                return SoloSetup(fix_name(name))
+            elif (name / "main.py").is_file():
+                return SoloSetup(
+                    f"{'.'.join(name.parts)}.main",
+                    type=SoloSetupType.MODULE,
                 )
+            else:
+                raise ExtensionNotFound(name)
+        else:
+            return SoloSetup(name)
 
-    def _resolve_name(self, name: str, package: Optional[str]) -> str:
+    def load_from_setup(self, setup: SoloSetup) -> None:
+        if setup.name in self.__setup:
+            raise ExtensionAlreadyLoaded(setup.name)
+        setup.load(self)
+        self.__setup[setup.name] = setup
+
+    @property
+    def setups(self):
+        return self.__setup
+
+
+def fix_name(name: str | Path) -> str:
+    return str(name).removesuffix(".py").replace("/", ".").replace("\\", ".")
+
+
+def _is_submodule(parent: str, child: str) -> bool:
+    return parent == child or child.startswith(f"{parent}.")
+
+
+class SoloSetupType(Enum):
+    FILE = auto()
+    MODULE = auto()
+
+
+class SoloSetup:
+    setup: Callable[["BaseServer"], None] | None = None
+    teardown: Callable[["BaseServer"], None] | None = None
+
+    def __init__(
+        self,
+        name: Path | str,
+        type: SoloSetupType = SoloSetupType.FILE,
+    ) -> None:
+        self.raw_name = self.name = name
+        self.type = type
+
+    def _resolve_name(self, name: str, package: Optional[str] = None) -> str:
         try:
             return import_util.resolve_name(name, package)
         except ImportError:
             raise ExtensionNotFound(name)
 
-    def load_plugin(
-        self,
-        name: str,
-        package: Optional[str] = None,
-        block_plugin: list[str] = [],
-    ) -> None:
-        name = self._resolve_name(name, package)
+    def _module_from_spec(self, spec: ModuleSpec, name: str):
+        lib = import_util.module_from_spec(spec)
+        sys.modules[name] = lib
+        spec.loader.exec_module(lib)
+        return lib
 
-        if name in self.__extensions:
-            raise ExtensionAlreadyLoaded(name)
-        # is not fond
-        elif (spec := import_util.find_spec(name)) and spec.has_location:
-            lib = import_util.module_from_spec(spec)
-            sys.modules[name] = lib
+    def _setup_module(self, module: ModuleType) -> None:
+        self.setup = getattr(module, "setup", None)
+        self.teardown = getattr(module, "teardown", None)
 
+        if self.setup is None:
+            raise NoEntryPointError(module.__name__)
+
+    def setup_func(self) -> None:
+        name, spec = self.raw_name, None
+        if isinstance(name, Path):
+            self.name = str(name)
+
+            spec = import_util.spec_from_file_location(self.name, name)
+        else:
+            self.name = self._resolve_name(self.name)
+
+            if not (spec := import_util.find_spec(self.name)) or not spec.has_location:
+                if not self.name.endswith(".main"):
+                    self.name += ".main"
+                    return self.setup_func()
+
+        if spec:
+            self._setup_module(self._module_from_spec(spec, self.name))
+        else:
+            raise ExtensionNotFound(self.name)
+
+    def load(self, server: "BaseServer") -> None:
+        self.setup_func()
+
+        if self.setup:
             try:
-                spec.loader.exec_module(lib)
+                self.setup(server)
             except Exception as e:
-                del sys.modules[name]
-                log.exception("loader exec module error", exc_info=e)
-                return
+                log.exception(e)
 
-            self.from_module_setup(lib, name)
-        else:
-            path = Path(*name.split("."))
+    def unload(self, server: "BaseServer") -> None:
+        sys.modules.pop(self.name, None)
 
-            for file in path.glob("[!_]*"):
-                if (pa := ".".join([*file.parts[:-1], file.stem])) in block_plugin:
-                    continue
+        for name in sys.modules.copy().keys():
+            if self.type == SoloSetupType.MODULE:
+                name = name.removesuffix(".main")
+            if _is_submodule(self.name, name):
+                log.debug(
+                    f"Remove module {name!r} when unloading plugin {repr(self)}, "
+                    f"success={sys.modules.pop(name, None)}"
+                )
 
-                if file.is_file() and file.suffix == ".py":
-                    self.load_plugin(
-                        pa,
-                        package=package,
-                        block_plugin=block_plugin,
-                    )
-                else:
-                    self.from_module_setup(
-                        importlib.import_module(f"{pa}.main", package)
-                    )
-
-    def from_module_setup(self, module: ModuleType, name: str | None = None) -> None:
-        if name is None:
-            name = module.__name__
-
-        if (setup := getattr(module, "setup", None)) is None:
-            del sys.modules[name]
-            raise NoEntryPointError()
-
-        try:
-            setup(self)
-        except Exception as e:
-            del sys.modules[name]
-            log.error(f"插劍加載失敗: {e}")
-            raise ExtensionError(e, name="插劍加載失敗")
-        else:
-            self.__extensions[name] = module
-
-    @property
-    def extensions_catch(self):
-        return self.__extensions
-
-
-def _is_submodule(parent: str, child: str) -> bool:
-    return parent == child or child.startswith(f"{parent}.")
+        if self.teardown:
+            try:
+                self.teardown(server)
+            except Exception as e:
+                log.exception(e)

@@ -1,10 +1,10 @@
 import logging
 
-from rich.table import Table
 from rich import print as rich_print
+from rich.table import Table
 
 from .. import BaseServer, Plugin
-from ..errors import ExtensionAlreadyLoaded, ExtensionNotFound
+from ..errors import ExtensionAlreadyLoaded, ExtensionNotFound, NoEntryPointError
 from ..utils import MISSING
 from .__base import BasePlugin
 
@@ -32,14 +32,12 @@ class BasePlugin_Commands(BasePlugin, description="指令處理"):
             print("請輸入插件名稱")
             return
 
-        module = f"plugins.{name}"
         try:
-            self.server.unload_extension(module)
+            self.server.unload_extension(f"{self.server.plugins_dir}.{name}")
         except ExtensionNotFound:
             print("插件不存在")
             return
         else:
-            self.server_config.append("stop_plugins", module, only_one=True)
             print("插件移除成功")
 
         return True
@@ -50,13 +48,12 @@ class BasePlugin_Commands(BasePlugin, description="指令處理"):
             print("請輸入插件名稱")
             return
 
-        module = f"plugins.{name}"
         try:
-            self.server.load_plugin(module)
+            self.server.load_extension(f"{self.server.plugins_dir}.{name}")
         except ExtensionAlreadyLoaded:
-            print("插劍已經加載, 若要重新加載請使用 plugin reload")
-        else:
-            self.server_config.remove("stop_plugins", module)
+            log.error("插劍已經加載, 若要重新加載請使用 plugin reload")
+        except NoEntryPointError:
+            log.error("未找到插劍")
 
     @Plugin.listener
     async def on_command_plugin_reload(self, name: str = MISSING):
@@ -65,8 +62,9 @@ class BasePlugin_Commands(BasePlugin, description="指令處理"):
                 if isinstance(plugin, BasePlugin):
                     continue
 
-                await self.on_command_plugin_remove(plugin.__module__[8:])
-                await self.on_command_plugin_add(plugin.__module__[8:])
+                name = plugin.__module__[len(self.server.plugins_dir) + 1 :]
+                await self.on_command_plugin_remove(name)
+                await self.on_command_plugin_add(name)
 
             print("插件重新加載完成")
             return
