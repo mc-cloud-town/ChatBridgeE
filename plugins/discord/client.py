@@ -190,8 +190,7 @@ class BotCommand(discord.Cog):
             ),
             value="\n".join(
                 [
-                    f"- [{k.display_name}]({len(v)}):"
-                    + ", ".join([back_msg(i) for i in v])
+                    f"- [{k.display_name}]({len(v)}): {', '.join(map(back_msg, v))}"
                     for k, v in data
                 ]
             )
