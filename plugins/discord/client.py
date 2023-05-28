@@ -65,11 +65,13 @@ class Bot(commands.Bot):
         return contents
 
     async def on_message(self, msg: Message):
-        # call command handler
-        if msg.channel.id in self.config.get(
-            "command_channels", []
-        ) or msg.channel.category_id in self.config.get("parents_for_command", []):
-            asyncio.create_task(self.process_commands(msg), name="discord-command")
+        ctx: commands.Context = await self.get_context(msg)
+        if (
+            ctx.command
+            and msg.channel.id in self.config.get("command_channels", [])
+            or msg.channel.category_id in self.config.get("parents_for_command", [])
+        ):
+            return await self.process_commands(msg)
 
         author = msg.author
         if msg.channel.id != self.chat_channel or author == self.user or author.system:
