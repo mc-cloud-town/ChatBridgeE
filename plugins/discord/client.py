@@ -66,9 +66,8 @@ class Bot(commands.Bot):
 
     async def on_message(self, msg: Message):
         ctx: commands.Context = await self.get_context(msg)
-        if (
-            ctx.command
-            and msg.channel.id in self.config.get("command_channels", [])
+        if ctx.command and (
+            msg.channel.id in self.config.get("command_channels", [])
             or msg.channel.category_id in self.config.get("parents_for_command", [])
         ):
             return await self.process_commands(msg)
