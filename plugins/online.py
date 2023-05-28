@@ -32,7 +32,7 @@ class Online(Plugin, config=OnlineConfig):
     @staticmethod
     def handle_minecraft(data: str) -> set[str]:
         if parsed := minecraft_list_match.match(data):
-            return set(filter(bool, parsed.group(1).strip().split(" ")))
+            return set([i.strip() for i in parsed.group(1).split(",") if i])
 
         return set()
 
@@ -48,7 +48,9 @@ class Online(Plugin, config=OnlineConfig):
                 no_command = True
                 continue
             if parsed := minecraft_GList_match.match(data):
-                result[parsed.group(1)] = parsed.group(2).strip().split(" ")
+                result[parsed.group(1)] = set(
+                    [i.strip() for i in parsed.group(2).split(",") if i]
+                )
 
         if no_command:
             return None
