@@ -4,7 +4,7 @@ from discord.errors import LoginFailure
 from server import BaseServer, Context, Plugin
 from server.utils import Config
 
-from .client import Bot
+from .client import Bot, back_msg
 
 
 class DiscordConfig(Config):
@@ -86,7 +86,7 @@ class Discord(Plugin, config=DiscordConfig):
 
     @Plugin.listener
     async def on_player_chat(self, ctx: Context, player_name: str, content: str):
-        await self.send(f"<{player_name}> {content}", ctx=ctx)
+        await self.send(f"<{back_msg(player_name)}> {content}", ctx=ctx)
 
     async def send_join_channel(
         self,
@@ -109,11 +109,17 @@ class Discord(Plugin, config=DiscordConfig):
 
     @Plugin.listener
     async def on_player_joined(self, ctx: Context, player_name: str):
-        await self.send_join_channel(f"{player_name} 加入了 {ctx.display_name}", ctx=ctx)
+        await self.send_join_channel(
+            f"{back_msg(player_name)} 加入了 {back_msg(ctx.display_name)}",
+            ctx=ctx,
+        )
 
     @Plugin.listener
     async def on_player_left(self, ctx: Context, player_name: str):
-        await self.send_join_channel(f"{player_name} 離開了 {ctx.display_name}", ctx=ctx)
+        await self.send_join_channel(
+            f"{back_msg(player_name)} 離開了 {back_msg(ctx.display_name)}",
+            ctx=ctx,
+        )
 
 
 def setup(server: BaseServer):

@@ -136,7 +136,7 @@ class BotCommand(discord.Cog):
                 rank, player, value = line.split(" ")
 
                 ranks.append(rank)
-                players.append(player)
+                players.append(back_msg(player))
                 values.append(value)
 
             embed.set_author(
@@ -166,6 +166,7 @@ class BotCommand(discord.Cog):
             return await ctx.send("未啟用 Online 插件")
 
         data = await plugin.query(order=True)
+        self.log.debug(f"get online players: {data}")
         embed = Embed(color=Color.blue(), timestamp=datetime.now())
 
         embed.add_field(
@@ -183,3 +184,9 @@ class BotCommand(discord.Cog):
             else url,
         )
         await ctx.send(embed=embed)
+
+
+def back_msg(msg: str):
+    for c in ["\\", "`", "*", "_", "<", ">", "@"]:
+        msg = msg.replace(c, f"\\{c}")
+    return msg
