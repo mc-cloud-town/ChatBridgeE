@@ -21,7 +21,7 @@ jobs:
 
           cd ..
           mkdir -p tmp/server && cp -R server tmp
-          cp server.py tmp/__main__.py
+          cp __main__.py tmp/__main__.py
           cd tmp && zip -r server.pyz * && cp server.pyz .. && cd ..
 
           cd plugins
