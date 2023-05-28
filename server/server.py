@@ -16,7 +16,7 @@ class Server(BaseServer):
         base_setup(self)
 
         path = Path(self.config.get("plugins_path"))
-        sys.path.append(path.parent.absolute())
+        sys.path.append(str(path.parent.absolute()))
         for file in path.glob("[!_]*"):
             if self.setup_from_name(file).name in self.config.get("stop_plugins"):
                 continue
