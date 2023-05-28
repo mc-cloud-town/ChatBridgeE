@@ -189,7 +189,11 @@ class BotCommand(discord.Cog):
                 f"({reduce(lambda x, y: x + y, map(lambda x: len(x[1]), data))})"
             ),
             value="\n".join(
-                [f"- [{k.display_name}]({len(v)}): {', '.join(v)}" for k, v in data]
+                [
+                    f"- [{k.display_name}]({len(v)}):"
+                    + ", ".join([back_msg(i) for i in v])
+                    for k, v in data
+                ]
             )
             + f"\n\nTotal number of servers [總伺服器數]: {len(data)}",
         )
