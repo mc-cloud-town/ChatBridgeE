@@ -11,6 +11,7 @@ class DiscordConfig(Config):
     token: str = "<you discord token here>"
     prefix: str = "!!"
     channel_for_chat = 123400000000000000
+    player_join_channel: int = 123400000000000000
     command_channels: list[int] = [123400000000000000]
     parents_for_command: list[int] = [123400000000000000]
     client_to_query_stats = "Survival"
@@ -24,6 +25,7 @@ class Discord(Plugin, config=DiscordConfig):
 
         self.bot = Bot(self, loop=self.loop)
         self.chat_channel: TextChannel | None = ...
+        self.player_join_channel: TextChannel | None = ...
 
     def on_load(self):
         config = self.config
@@ -54,45 +56,62 @@ class Discord(Plugin, config=DiscordConfig):
 
         self.loop.create_task(close())
 
-    async def send_chat(
+    async def send(
         self,
-        content: str = None,
+        content: str,
         ctx: Context | None = None,
+        channel: TextChannel | None = ...,
         **kwargs,
     ) -> None:
-        if not (id := self.config.get("channel_for_chat")):
-            return
-
-        if ctx:
-            content = f"[{ctx.display_name}] {content}"
+        content = f"[{ctx.display_name}] {content}"
         if self.chat_channel is ...:
             self.chat_channel = await self.bot.get_or_fetch_channel(id)
 
-        await self.chat_channel.send(content, **kwargs)
+        if channel := self.chat_channel if channel is ... else channel:
+            await channel.send(content, **kwargs)
 
     @Plugin.listener
     async def on_server_start(self, ctx: Context):
-        await self.send_chat("啟動中...", ctx=ctx)
+        await self.send("啟動中...", ctx=ctx)
 
     @Plugin.listener
     async def on_server_startup(self, ctx: Context):
-        await self.send_chat("啟動完成", ctx=ctx)
+        await self.send("啟動完成", ctx=ctx)
 
     @Plugin.listener
     async def on_server_stop(self, ctx: Context):
-        await self.send_chat("伺服器關閉", ctx=ctx)
+        await self.send("伺服器關閉", ctx=ctx)
 
     @Plugin.listener
     async def on_player_chat(self, ctx: Context, player_name: str, content: str):
-        await self.send_chat(f"<{player_name}> {content}", ctx=ctx)
+        await self.send(f"<{player_name}> {content}", ctx=ctx)
+
+    async def send_join_channel(
+        self,
+        content: str,
+        ctx: Context | None = None,
+        channel: TextChannel | None = None,
+        **kwargs,
+    ):
+        if self.player_join_channel is ...:
+            self.player_join_channel = await self.bot.get_or_fetch_channel(
+                self.config.get("player_join_channel")
+            )
+
+        await self.send(
+            content,
+            ctx=ctx,
+            channel=channel or self.player_join_channel,
+            **kwargs,
+        )
 
     @Plugin.listener
     async def on_player_joined(self, ctx: Context, player_name: str):
-        await self.send_chat(f"{player_name} 加入了 {ctx.display_name}", ctx=ctx)
+        await self.send_join_channel(f"{player_name} 加入了 {ctx.display_name}", ctx=ctx)
 
     @Plugin.listener
     async def on_player_left(self, ctx: Context, player_name: str):
-        await self.send_chat(f"{player_name} 離開了 {ctx.display_name}", ctx=ctx)
+        await self.send_join_channel(f"{player_name} 離開了 {ctx.display_name}", ctx=ctx)
 
 
 def setup(server: BaseServer):
