@@ -74,15 +74,15 @@ class Discord(Plugin, config=DiscordConfig):
 
     @Plugin.listener
     async def on_server_start(self, ctx: Context):
-        await self.send("啟動中...", ctx=ctx)
+        await self.send("Starting - 啟動中", ctx=ctx)
 
     @Plugin.listener
     async def on_server_startup(self, ctx: Context):
-        await self.send("啟動完成", ctx=ctx)
+        await self.send("Startup complete - 啟動完成", ctx=ctx)
 
     @Plugin.listener
     async def on_server_stop(self, ctx: Context):
-        await self.send("伺服器關閉", ctx=ctx)
+        await self.send("The server shuts down - 伺服器關閉", ctx=ctx)
 
     @Plugin.listener
     async def on_player_chat(self, ctx: Context, player_name: str, content: str):

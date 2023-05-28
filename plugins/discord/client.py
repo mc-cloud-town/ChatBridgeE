@@ -45,7 +45,10 @@ class Bot(commands.Bot):
             return None
 
     async def on_ready(self):
-        self.log.info(f"[cyan]discord 登入 {self.user}[/cyan]", extra=dict(markup=True))
+        self.log.info(
+            f"[cyan]discord login {self.user}[/cyan]",
+            extra=dict(markup=True),
+        )
 
     async def get_reference_message(self, msg: Message) -> Optional[Message]:
         if not msg.reference:
@@ -61,7 +64,12 @@ class Bot(commands.Bot):
                 )
             )
         if len(msg.attachments) > 0:
-            contents += [FormatMessage("li <點我打開附件>", f"@ {msg.jump_url}")]
+            contents += [
+                FormatMessage(
+                    "li <Click Me to open the attachment [點我打開附件]>",
+                    f"@ {msg.jump_url}",
+                )
+            ]
         return contents
 
     async def on_message(self, msg: Message):
@@ -78,9 +86,9 @@ class Bot(commands.Bot):
 
         if (ref_msg := await self.get_reference_message(msg)) is not None:
             ref_author = ref_msg.author
-            # ┌─回覆自 <XX> XX
+            # ┌─<XX> XX
             await self.server.send(
-                ["g ┌─回覆自 <", "r " + (ref_author.nick or ref_author.name), "g > "]
+                ["g ┌─<", "r " + (ref_author.nick or ref_author.name), "g > "]
                 + self.style_message(ref_msg),
             )
 
@@ -141,19 +149,24 @@ class BotCommand(discord.Cog):
                 values.append(value)
 
             embed.set_author(
-                name=f"統計排名-{result.get('stats_name', '錯誤')}",
+                name=f"Statistic Rank [統計排名]-{result.get('stats_name')}",
                 icon_url=ctx.guild.icon,
             )
-            embed.add_field(name="排名", value="\n".join(ranks))
-            embed.add_field(name="玩家", value="\n".join(players))
-            embed.add_field(name="數值", value="\n".join(values))
-            embed.set_footer(text=f"總計: {format_number(result.get('total', -1))}")
+            embed.add_field(name="Rank [排名]", value="\n".join(ranks))
+            embed.add_field(name="Player [玩家]", value="\n".join(players))
+            embed.add_field(name="Value [數值]", value="\n".join(values))
+            embed.set_footer(
+                text=f"Total [總計]: {format_number(result.get('total', -1))}",
+            )
 
             await ctx.send(embed=embed)
         elif code == 1:
-            await ctx.send("未知的 stats 名稱")
+            await ctx.send("Unknown stats name [未知的 stats 名稱]")
         elif code == 2:
-            await ctx.send("未啟用 stats_helper 插件，無法查詢 stats")
+            await ctx.send(
+                "The stats_helper plugin is not enabled to query stats "
+                "[未啟用 stats_helper 插件，無法查詢 stats]"
+            )
 
     @commands.command()
     async def online(self, ctx: ApplicationContext):
@@ -164,22 +177,28 @@ class BotCommand(discord.Cog):
                 raise Exception
             plugin: Online
         except Exception:
-            return await ctx.send("未啟用 Online 插件")
+            return await ctx.send("The Online plug-in is not enabled [未啟用 Online 插件]")
 
         data = await plugin.query(order=True)
         self.log.debug(f"get online players: {data}")
         embed = Embed(color=Color.blue(), timestamp=datetime.now())
 
         embed.add_field(
-            name=f"成員列表 ({reduce(lambda x, y: x + y, map(lambda x: len(x[1]), data))})",
+            name=(
+                "List of members [成員列表]"
+                f"({reduce(lambda x, y: x + y, map(lambda x: len(x[1]), data))})"
+            ),
             value="\n".join(
                 [f"- [{k.display_name}]({len(v)}): {', '.join(v)}" for k, v in data]
             )
-            + f"\n\n總伺服器數: {len(data)}",
+            + f"\n\nTotal number of servers [總伺服器數]: {len(data)}",
         )
 
         embed.set_author(
-            name=f"{self.config.get('online_display_name', ctx.guild.name)} 上線人數",
+            name=(
+                self.config.get("online_display_name", ctx.guild.name)
+                + "Number of ongo-ins [上線人數]"
+            ),
             icon_url=ctx.guild.icon
             if (url := self.config.get("online_icon_url")) == "AUTO"
             else url,
