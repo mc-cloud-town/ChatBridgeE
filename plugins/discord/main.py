@@ -65,7 +65,9 @@ class Discord(Plugin, config=DiscordConfig):
     ) -> None:
         content = f"[{ctx.display_name}] {content}"
         if self.chat_channel is ...:
-            self.chat_channel = await self.bot.get_or_fetch_channel(id)
+            self.chat_channel = await self.bot.get_or_fetch_channel(
+                self.config.get("channel_for_chat")
+            )
 
         if channel := self.chat_channel if channel is ... else channel:
             await channel.send(content, **kwargs)
