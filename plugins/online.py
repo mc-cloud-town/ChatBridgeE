@@ -5,7 +5,7 @@ from server import BaseServer, Context, Plugin
 from server.utils import Config, RconClient
 
 minecraft_list_match = re.compile(
-    r"There are \d+ of a max(?: of)? \d+ players online:(.*+)"
+    r"There are \d+ of a max(?: of)? \d+ players online:(.*)"
 )
 minecraft_GList_match = re.compile(r"\[(.*)\] \(\d*\):((?:.*[ ,]?)+)")
 
