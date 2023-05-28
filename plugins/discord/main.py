@@ -110,14 +110,14 @@ class Discord(Plugin, config=DiscordConfig):
     @Plugin.listener
     async def on_player_joined(self, ctx: Context, player_name: str):
         await self.send_join_channel(
-            f"{back_msg(player_name)} 加入了 {back_msg(ctx.display_name)}",
+            f"{back_msg(player_name)} joined {back_msg(ctx.display_name)}",
             ctx=ctx,
         )
 
     @Plugin.listener
     async def on_player_left(self, ctx: Context, player_name: str):
         await self.send_join_channel(
-            f"{back_msg(player_name)} 離開了 {back_msg(ctx.display_name)}",
+            f"{back_msg(player_name)} left {back_msg(ctx.display_name)}",
             ctx=ctx,
         )
 

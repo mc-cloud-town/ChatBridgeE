@@ -51,9 +51,9 @@ class BasePlugin_Commands(BasePlugin, description="指令處理"):
         try:
             self.server.load_extension(f"{self.server.plugins_dir}.{name}")
         except ExtensionAlreadyLoaded:
-            log.error("插劍已經加載, 若要重新加載請使用 plugin reload")
+            log.error("插件已經加載, 若要重新加載請使用 plugin reload")
         except NoEntryPointError:
-            log.error("未找到插劍")
+            log.error("未找到插件")
 
     @Plugin.listener
     async def on_command_plugin_reload(self, name: str = MISSING):

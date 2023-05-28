@@ -82,7 +82,7 @@ class Plugin(metaclass=PluginMeta):
                 for method_name in method_names:
                     server.add_listener(getattr(self, method_name), name)
         finally:
-            server.log.info(f"加載插劍: [{self.__module__}] {self.__plugin_name__}")
+            server.log.info(f"加載插件: [{self.__module__}] {self.__plugin_name__}")
             try:
                 self.on_load()
             except Exception:
@@ -94,7 +94,7 @@ class Plugin(metaclass=PluginMeta):
         try:
             self.on_unload_before()
         except Exception as e:
-            log.error(f"插劍 {self.__plugin_name__} on_unload_before 出錯: {e}")
+            log.error(f"插件 {self.__plugin_name__} on_unload_before 出錯: {e}")
             pass
 
         try:
@@ -105,7 +105,7 @@ class Plugin(metaclass=PluginMeta):
             try:
                 self.on_unload()
             except Exception as e:
-                log.error(f"插劍 {self.__plugin_name__} on_unload 出錯: {e}")
+                log.error(f"插件 {self.__plugin_name__} on_unload 出錯: {e}")
                 pass
 
     def on_load(self) -> None:
@@ -160,7 +160,7 @@ class PluginMixin:
 
         if self.get_plugin(name) is not None:
             if not override:
-                log.error(f"加載到相同名稱的插劍 {name}")
+                log.error(f"加載到相同名稱的插件 {name}")
                 raise ExtensionAlreadyLoaded(name)
             self.remove_plugin(name)
 
