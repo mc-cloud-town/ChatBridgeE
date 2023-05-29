@@ -22,6 +22,8 @@ META = ServerInterface.get_instance().as_plugin_server_interface().get_self_meta
 sio = socketio.Client()
 cb_lock = Lock()
 
+config: ChatBridgeEConfig = None
+
 
 def tr(key: str, *args, **kwargs) -> RTextBase:
     return ServerInterface.get_instance().rtr(f"{META.id}.{key}", *args, **kwargs)
@@ -70,7 +72,8 @@ def on_load(server: PluginServerInterface, old_module):
         server.save_config_simple(ChatBridgeEConfig.get_default())
 
     try:
-        config: ChatBridgeEConfig = server.load_config_simple(
+        global config
+        config = server.load_config_simple(
             file_name=config_path,
             in_data_folder=False,
             target_class=ChatBridgeEConfig,
@@ -141,6 +144,9 @@ def on_server_stop(server: PluginServerInterface, return_code: int):
 
 def on_info(server: PluginServerInterface, info: Info):
     if info.is_user and info.is_from_server:
+        if info.player in config.chat_blacklist_names:
+            return
+
         send_event("player_chat", [info.player, info.content])
 
 

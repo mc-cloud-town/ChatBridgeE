@@ -22,6 +22,7 @@ class ChatBridgeEConfig(Serializable):
     password: str = "SurvivalPassword"
     server_hostname: str = "127.0.0.1"
     server_port: int = 8081
+    chat_blacklist_names: list[str] = ["REC_PCRC"]
 
     @property
     def client_info(self) -> ClientInfo:
