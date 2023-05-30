@@ -55,3 +55,13 @@ class Server(BaseServer):
 
     async def on_player_left(self, ctx: Context, player_name: str):
         await ctx.emit("player_left", ctx.display_name, player_name, skip_sid=ctx.sid)
+
+    async def on_file_sync(self, ctx: Context, file_path: str, data: bytes):
+        await ctx.emit(
+            "file_sync",
+            ctx.display_name,
+            False,
+            file_path,
+            data,
+            skip_sid=ctx.sid,
+        )

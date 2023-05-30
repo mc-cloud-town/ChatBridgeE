@@ -130,7 +130,9 @@ class BotCommand(discord.Cog):
         if not (client := self.server.get_client(client_name)):
             return
 
-        result = await client.extra_command(f"stats {' '.join(args)}")
+        result = await client.extra_command(
+            f"stats rank {' '.join(args[1:] if args[0] == 'rank' else args)}"
+        )
 
         # stats:
         #   success> code: 0
@@ -145,7 +147,7 @@ class BotCommand(discord.Cog):
                 rank, player, value = line.split(" ")
 
                 ranks.append(rank)
-                players.append(back_msg(player))
+                players.append(fix_msg(player))
                 values.append(value)
 
             embed.set_author(
@@ -190,7 +192,7 @@ class BotCommand(discord.Cog):
             ),
             value="\n".join(
                 [
-                    f"- [{k.display_name}]({len(v)}): {', '.join(map(back_msg, v))}"
+                    f"- [{k.display_name}]({len(v)}): {', '.join(map(fix_msg, v))}"
                     for k, v in data
                 ]
             )
@@ -209,7 +211,7 @@ class BotCommand(discord.Cog):
         await ctx.send(embed=embed)
 
 
-def back_msg(msg: str):
+def fix_msg(msg: str):
     for c in ["\\", "`", "*", "_", "<", ">", "@"]:
         msg = msg.replace(c, f"\\{c}")
     return msg

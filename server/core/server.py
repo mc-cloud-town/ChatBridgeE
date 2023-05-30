@@ -35,7 +35,9 @@ class BaseServer(PluginMixin):
         self.extra_events: dict[str, list[CoroFunc]] = {}
 
         self.clients: dict[str, Context] = {}
-        self.sio_server = AsyncServer()
+        self.sio_server = AsyncServer(
+            max_http_buffer_size=1e8,  # 100MB
+        )
         self.app = web.Application(loop=self.loop)
         self.command_manager = CommandManager(self)
         self.log = log

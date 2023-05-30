@@ -1,10 +1,11 @@
-from discord import TextChannel
+from pathlib import Path
+from discord import File, TextChannel
 from discord.errors import LoginFailure
 
 from server import BaseServer, Context, Plugin
 from server.utils import Config
 
-from .client import Bot, back_msg
+from .client import Bot, fix_msg
 
 
 class DiscordConfig(Config):
@@ -86,7 +87,7 @@ class Discord(Plugin, config=DiscordConfig):
 
     @Plugin.listener
     async def on_player_chat(self, ctx: Context, player_name: str, content: str):
-        await self.send(f"<{back_msg(player_name)}> {content}", ctx=ctx)
+        await self.send(f"<{fix_msg(player_name)}> {content}", ctx=ctx)
 
     async def send_join_channel(
         self,
@@ -110,15 +111,30 @@ class Discord(Plugin, config=DiscordConfig):
     @Plugin.listener
     async def on_player_joined(self, ctx: Context, player_name: str):
         await self.send_join_channel(
-            f"{back_msg(player_name)} joined {back_msg(ctx.display_name)}",
+            f"{fix_msg(player_name)} joined {fix_msg(ctx.display_name)}",
             ctx=ctx,
         )
 
     @Plugin.listener
     async def on_player_left(self, ctx: Context, player_name: str):
         await self.send_join_channel(
-            f"{back_msg(player_name)} left {back_msg(ctx.display_name)}",
+            f"{fix_msg(player_name)} left {fix_msg(ctx.display_name)}",
             ctx=ctx,
+        )
+
+    @Plugin.listener
+    async def on_file_sync(
+        self,
+        ctx: Context,
+        server_name: str,
+        root: bool,
+        file_path: str,
+        data: bytes,
+    ):
+        await self.send(
+            f"A file published from {server_name} - 從 {server_name} 發佈的檔案",
+            ctx=ctx,
+            file=File(data, Path(file_path).name),
         )
 
 

@@ -1,9 +1,8 @@
 from typing import Optional
 
-import socketio
-from mcdreforged.api.all import PluginServerInterface, RColor, RText
+from mcdreforged.api.all import RText
 
-from .config import ChatBridgeEConfig
+from .plugin import BasePlugin
 
 
 class RTextJSON(RText):
@@ -22,17 +21,8 @@ class RTextJSON(RText):
 
 
 # TODO add format event data from config
-class ReadClient:
-    def __init__(
-        self,
-        server: PluginServerInterface,
-        sio: socketio.Client,
-        config: ChatBridgeEConfig,
-    ) -> None:
-        self.server = server
-        self.config = config
-        self.sio = sio
-
+class ReadClient(BasePlugin):
+    def setup(self) -> None:
         self.sio.on("chat", self.on_chat)
         # self.sio.on("new_connect", self.on_new_connect)
         # self.sio.on("new_disconnect", self.on_new_disconnect)
@@ -44,10 +34,7 @@ class ReadClient:
         self.sio.on("player_left", self.on_player_left)
         self.sio.on("extra_command", self.on_extra_command)
 
-    def say(self, msg: str) -> None:
-        self.server.say(msg)
-
-    def on_chat(self, msg: dict):
+    def on_chat(self, msg: dict) -> None:
         data = RTextJSON(msg)
 
         self.server.say(data)
@@ -95,8 +82,8 @@ class ReadClient:
     #
     # <unknown command>
     #   code: -1
-    def on_extra_command(self, command: str):
-        result = {"command": command}
+    def on_extra_command(self, command: str) -> None:
+        result = {"command": command, "code": -1}
         if command.startswith("stats "):
             try:
                 import stats_helper  # pyright: ignore
@@ -133,16 +120,4 @@ class ReadClient:
                 else:
                     result.update({"code": 1})
 
-        self.sio.call("cmd_callback", result)
-
-    def from_server(
-        self,
-        server_name: str,
-        msg: str,
-        *,
-        set_start: bool = True,
-    ) -> None:
-        if set_start:
-            msg = f"[{server_name}] {msg}"
-
-        self.say(RText(msg, color=RColor.gray))
+        self.sio.emit("cmd_callback", result)

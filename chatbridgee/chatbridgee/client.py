@@ -9,30 +9,25 @@ from mcdreforged.api.all import (
     Info,
     Literal,
     PluginServerInterface,
-    RTextBase,
-    ServerInterface,
     new_thread,
 )
 from socketio import exceptions
 
 from .config import ChatBridgeEConfig
+from .file_sync import FileSyncPlugin
+from .plugin import META, tr
 from .read import ReadClient
 
-META = ServerInterface.get_instance().as_plugin_server_interface().get_self_metadata()
 sio = socketio.Client()
 cb_lock = Lock()
 
 config: ChatBridgeEConfig = None
 
 
-def tr(key: str, *args, **kwargs) -> RTextBase:
-    return ServerInterface.get_instance().rtr(f"{META.id}.{key}", *args, **kwargs)
-
-
 @new_thread("chatbridge-send-data")
 def send_event(event: str, data: Union[str, dict, list] = None):
     if sio.connected:
-        sio.call(event, data)
+        sio.emit(event, data)
 
 
 @sio.event
@@ -60,7 +55,7 @@ def parse_properties(path: Path | str) -> dict:
             continue
 
         key, value = line.split("=", maxsplit=1)
-        result[key] = value
+        result[key.strip()] = value.strip()
 
     return result
 
@@ -70,21 +65,17 @@ def on_load(server: PluginServerInterface, old_module):
 
     if not config_path.is_file():
         server.save_config_simple(ChatBridgeEConfig.get_default())
+        return
 
-    try:
-        global config
-        config = server.load_config_simple(
-            file_name=config_path,
-            in_data_folder=False,
-            target_class=ChatBridgeEConfig,
-        )
-    except:  # noqa: E722
-        server.logger.exception(
-            "Failed to read the config file! ChatBridgeE might not work properly"
-        )
-        server.logger.error("Fix the configure file and then reload the plugin")
+    global config
+    config = server.load_config_simple(
+        file_name=config_path,
+        in_data_folder=False,
+        target_class=ChatBridgeEConfig,
+    )
 
     ReadClient(server, sio, config)
+    FileSyncPlugin(server, sio, config)
 
     auth_else = {}
     directory = server.get_mcdr_config().get("working_directory", "server")

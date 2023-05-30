@@ -4,5 +4,16 @@ chatbridgee:
     一個跨服聊天客戶端插件
     指令前綴: {prefix}
     §7{prefix}§r 顯示幫助信息
-  help_summary: '跨服聊天控制'
-# §7{prefix} status§r 查看跨服聊天狀態
+  help_summary: 跨服聊天控制
+  # §7{prefix} status§r 查看跨服聊天狀態
+
+  file_help_message: |
+    ------MCDR ChatBridgee - file sync 插件 v{version}------
+    一個跨服檔案同步客戶端插件，ChatBridgee 分支插劍
+    指令前綴: {prefix}
+    §7{prefix}§r 顯示幫助信息
+    §7{prefix}§r
+
+  file_help_summary: 修復
+
+  no_args: 缺少參數 {arg}
