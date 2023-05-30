@@ -36,6 +36,10 @@ class FileSyncPlugin(BasePlugin):
         file_path: str,
         data: bytes,
     ) -> None:
+        if not self.config.file_sync_enabled:
+            print("chatbridgee 收到檔案同步請求，但檔案同步功能未啟用")
+            return
+
         self.from_server(
             server_name,
             f"Files are synchronizing... [檔案同步中...] ({file_path})",
