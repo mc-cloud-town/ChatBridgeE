@@ -35,7 +35,7 @@ class ChatBridgeEConfig(Serializable):
     # 啟用檔案同步
     file_sync_enabled: bool = False
     # 檔案同步路徑
-    file_sync_path: str = "world/config/worldedit/schematic/*"
+    file_sync_path: str = "server/config/worldedit/schematics/*"
     # 檔案同步副檔名
     file_sync_extension: str = ".schem"
     # 檔案同步指令前綴
