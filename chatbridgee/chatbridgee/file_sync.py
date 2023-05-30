@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from mcdreforged.api.all import CommandSource, Literal, RColor, GreedyText
+from mcdreforged.api.all import CommandSource, GreedyText, Literal, RColor, RText
 
 from .plugin import META, BasePlugin, tr
 
@@ -65,12 +65,12 @@ class FileSyncPlugin(BasePlugin):
     def on_command_send(self, source: CommandSource = None, ctx: dict = {}) -> None:
         config = self.config
         if (filename := str(ctx.get("filename", None))) is None:
-            self.say(tr("no_args").format(arg="filename"), color=RColor.red)
+            source.reply(RText(tr("no_args").format(arg="filename"), color=RColor.red))
             return
 
         path = Path(config.file_sync_path) / f"{filename}{config.file_sync_extension}"
         if not path.is_file():
-            self.say("檔案未找到", color=RColor.red)
+            source.reply(RText("檔案未找到", color=RColor.red))
             return
 
         with Path(path).open("rb") as f:
@@ -83,8 +83,10 @@ class FileSyncPlugin(BasePlugin):
         path = Path(config.file_sync_path)
         if not path.is_dir():
             source.reply(
-                "The archive directory was not found - [檔案目錄未找到]",
-                color=RColor.red,
+                RText(
+                    "The archive directory was not found - [檔案目錄未找到]",
+                    color=RColor.red,
+                )
             )
             return
 
@@ -95,8 +97,10 @@ class FileSyncPlugin(BasePlugin):
 
         if not files:
             source.reply(
-                "There are no archives in the archive directory - [檔案目錄中沒有檔案]",
-                color=RColor.red,
+                RText(
+                    "There are no archives in the archive directory - [檔案目錄中沒有檔案]",
+                    color=RColor.red,
+                )
             )
             return
 
