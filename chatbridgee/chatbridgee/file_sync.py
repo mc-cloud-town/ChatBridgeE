@@ -82,7 +82,7 @@ class FileSyncPlugin(BasePlugin):
         config = self.config
         path = Path(config.file_sync_path)
         if not path.is_dir():
-            self.say(
+            source.reply(
                 "The archive directory was not found - [檔案目錄未找到]",
                 color=RColor.red,
             )
@@ -94,7 +94,7 @@ class FileSyncPlugin(BasePlugin):
         )
 
         if not files:
-            self.say(
+            source.reply(
                 "There are no archives in the archive directory - [檔案目錄中沒有檔案]",
                 color=RColor.red,
             )
