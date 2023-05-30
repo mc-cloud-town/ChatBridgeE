@@ -104,4 +104,7 @@ class FileSyncPlugin(BasePlugin):
             )
             return
 
-        source.reply(f"A list of files - [檔案列表]: {', '.join(files)}")
+        source.reply(
+            "A list of files - [檔案列表]: \n"
+            + "\n".join([f"{i+1}. {file}" for i, file in enumerate(files)])
+        )
