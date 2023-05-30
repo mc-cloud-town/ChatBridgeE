@@ -25,7 +25,12 @@ class FileSyncPlugin(BasePlugin):
             .then(
                 Literal("sync")
                 .runs(self.on_command_send)
-                .then(GreedyText("cmt").runs(self.on_command_send))
+                .then(GreedyText("filename").runs(self.on_command_send))
+            )
+            .then(
+                Literal("list")
+                .runs(self.on_command_list)
+                .then(GreedyText("match").runs(self.on_command_list))
             )
         )
 
@@ -72,3 +77,27 @@ class FileSyncPlugin(BasePlugin):
             self.sio.emit("file_sync", path, f.read())
 
         source.reply("檔案傳送完成")
+
+    def on_command_list(self, source: CommandSource = None, ctx: dict = {}) -> None:
+        config = self.config
+        path = Path(config.file_sync_path)
+        if not path.is_dir():
+            self.say(
+                "The archive directory was not found - [檔案目錄未找到]",
+                color=RColor.red,
+            )
+            return
+
+        files = set(
+            str(f.relative_to(path)).removesuffix(config.file_sync_extension)
+            for f in path.rglob(f"*{config.file_sync_extension}")
+        )
+
+        if not files:
+            self.say(
+                "There are no archives in the archive directory - [檔案目錄中沒有檔案]",
+                color=RColor.red,
+            )
+            return
+
+        source.reply(f"A list of files - [檔案列表]: {', '.join(files)}")

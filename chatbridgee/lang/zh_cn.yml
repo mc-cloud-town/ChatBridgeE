@@ -12,8 +12,9 @@ chatbridgee:
     一個跨服檔案同步客戶端插件，ChatBridgee 分支插劍
     指令前綴: {prefix}
     §7{prefix}§r 顯示幫助信息
-    §7{prefix}§r
+    §7{prefix}§r sync <filename>
+    §7{prefix}§r list
 
-  file_help_summary: 修復
+  file_help_summary: 跨服檔案同步
 
   no_args: 缺少參數 {arg}
