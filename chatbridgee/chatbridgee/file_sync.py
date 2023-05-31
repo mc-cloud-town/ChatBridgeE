@@ -15,7 +15,7 @@ class FileSyncPlugin(BasePlugin):
         if not self.config.file_sync_enabled:
             return
 
-        self.log.info(f"file sync path: {self.config.file_sync_path}")
+        self.log.info(f"file sync path: {Path(self.config.file_sync_path).absolute()}")
         self.sio.on("file_sync", self.on_file_sync)
         self.server.register_help_message(
             self.config.file_sync_command_prefix,
