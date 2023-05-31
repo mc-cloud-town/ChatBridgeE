@@ -48,20 +48,23 @@ class FileEncode:
     def encode(self) -> bytes:
         data = (
             # flag (1)
-            self.flag.to_bytes(1)
+            self.flag.to_bytes(1, "big")
             # [n] path length (2)
-            + len(path_bytes := self.path.encode(encoding="utf-8")).to_bytes(2)
+            + len(path_bytes := self.path.encode(encoding="utf-8")).to_bytes(2, "big")
             # path (n)
             + path_bytes
             # [m] data length (2)
-            + len(data_bytes := self.data).to_bytes(2)
+            + len(data_bytes := self.data).to_bytes(2, "big")
             # data (m)
             + data_bytes
         )
         if self.server_name:
             data += (
                 # [o] server name length
-                len(server_name_bytes := self.server_name.encode("utf-8")).to_bytes(2)
+                len(server_name_bytes := self.server_name.encode("utf-8")).to_bytes(
+                    2,
+                    "big",
+                )
                 # server name (o)
                 + server_name_bytes
             )
