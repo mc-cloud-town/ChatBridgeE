@@ -24,7 +24,7 @@ cb_lock = Lock()
 config: ChatBridgeEConfig = None
 
 
-@new_thread("chatbridge-send-data")
+# @new_thread("chatbridge-send-data")
 def send_event(event: str, data: Union[str, dict, list] = None):
     if sio.connected:
         sio.emit(event, data)
