@@ -1,3 +1,4 @@
+from io import BytesIO
 from pathlib import Path
 from discord import File, TextChannel
 from discord.errors import LoginFailure
@@ -137,7 +138,7 @@ class Discord(Plugin, config=DiscordConfig):
         await self.send(
             f"A file published from {server_name} - 從 {server_name} 發佈的檔案",
             ctx=ctx,
-            file=File(data.data, Path(file_path).name),
+            file=File(BytesIO(data.data), Path(file_path).name),
             channel=self.sync_channel,
         )
 
