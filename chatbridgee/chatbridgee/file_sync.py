@@ -73,7 +73,7 @@ class FileSyncPlugin(BasePlugin):
             source.reply(RText("檔案未找到", color=RColor.red))
             return
 
-        self.sio.emit("file_sync", FileEncode(path, path.read_bytes()))
+        self.sio.emit("file_sync", FileEncode(path, path.read_bytes()).encode())
 
         source.reply("檔案傳送完成")
 
