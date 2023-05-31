@@ -35,4 +35,5 @@ jobs:
           removeArtifacts: true
           makeLatest: true
           token: ${{ secrets.GITHUB_TOKEN }}
+          tag: latest
           artifacts: '*.mcdr,*.pyz,*.zip'
