@@ -79,7 +79,7 @@ class FileSyncPlugin(BasePlugin):
 
     def on_command_list(self, source: CommandSource = None, ctx: dict = {}) -> None:
         config = self.config
-        path, match = Path(config.file_sync_path), ctx.get("match", None)
+        path, match = Path(config.file_sync_path), ctx.get("match", "")
         if not path.is_dir():
             source.reply(
                 RText(
@@ -90,10 +90,10 @@ class FileSyncPlugin(BasePlugin):
             return
 
         files = set(
-            str(f.relative_to(path)).removesuffix(config.file_sync_extension)
+            f.relative_to(path).as_posix().removesuffix(config.file_sync_extension)
             for f in path.rglob(f"*{config.file_sync_extension}")
+            if f.name.startswith(match)
         )
-        files = set(f for f in files if match is not None and str(f).startswith(match))
 
         if not files:
             source.reply(
