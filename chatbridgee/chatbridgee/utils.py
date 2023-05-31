@@ -48,7 +48,7 @@ class FileEncode:
     def encode(self) -> bytes:
         data = (
             # flag (1)
-            self.flag.to_bytes()
+            self.flag.to_bytes(1)
             # [n] path length (2)
             + len(path_bytes := self.path.encode(encoding="utf-8")).to_bytes(2)
             # path (n)
