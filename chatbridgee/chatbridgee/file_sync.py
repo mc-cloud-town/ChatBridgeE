@@ -15,6 +15,7 @@ class FileSyncPlugin(BasePlugin):
         if not self.config.file_sync_enabled:
             return
 
+        self.log.info(f"file sync path: {self.config.file_sync_path}")
         self.sio.on("file_sync", self.on_file_sync)
         self.server.register_help_message(
             self.config.file_sync_command_prefix,
@@ -41,7 +42,7 @@ class FileSyncPlugin(BasePlugin):
         file_path, server_name = data.path, data.server_name
 
         if not self.config.file_sync_enabled:
-            print("chatbridgee 收到檔案同步請求，但檔案同步功能未啟用")
+            self.log.info("chatbridgee 收到檔案同步請求，但檔案同步功能未啟用")
             return
 
         self.from_server(

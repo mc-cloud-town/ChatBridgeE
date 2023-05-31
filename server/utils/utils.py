@@ -95,6 +95,14 @@ class FileEncode:
             )
         return data
 
+    def __str__(self) -> str:
+        return (
+            f"<FileEncode path={self.path} flag={self.flag} "
+            f"server_name={self.server_name}>"
+        )
+
+    __repr__ = __str__
+
     @classmethod
     def decode(cls, raw_data: bytes) -> "FileEncode":
         """encode to data"""

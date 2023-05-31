@@ -28,6 +28,7 @@ class BasePlugin(ABC):
         self.server = server
         self.config = config
         self.sio = sio
+        self.log = server.logger
 
         self.setup()
 
