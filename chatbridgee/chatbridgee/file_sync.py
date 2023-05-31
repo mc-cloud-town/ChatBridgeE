@@ -3,6 +3,7 @@ from pathlib import Path
 from mcdreforged.api.all import CommandSource, GreedyText, Literal, RColor, RText
 
 from .plugin import META, BasePlugin, tr
+from .utils import FileEncode
 
 
 def display_help(source: CommandSource):
@@ -34,13 +35,11 @@ class FileSyncPlugin(BasePlugin):
             )
         )
 
-    def on_file_sync(
-        self,
-        server_name: str,
-        root: bool,
-        file_path: str,
-        data: bytes,
-    ) -> None:
+    def on_file_sync(self, raw_data: bytes) -> None:
+        data = FileEncode.decode(raw_data)
+        root = False  # TODO add root option from flag
+        file_path, server_name = data.path, data.server_name
+
         if not self.config.file_sync_enabled:
             print("chatbridgee 收到檔案同步請求，但檔案同步功能未啟用")
             return
@@ -54,7 +53,7 @@ class FileSyncPlugin(BasePlugin):
         path = (Path() if root else Path(self.config.file_sync_path)) / file_path
         path.parent.mkdir(parents=True, exist_ok=True)
         with path.open("wb") as f:
-            f.write(data)
+            f.write(data.data)
 
         self.from_server(
             server_name,
@@ -73,14 +72,13 @@ class FileSyncPlugin(BasePlugin):
             source.reply(RText("檔案未找到", color=RColor.red))
             return
 
-        with Path(path).open("rb") as f:
-            self.sio.emit("file_sync", path, f.read())
+        self.sio.emit("file_sync", FileEncode(path, path.read_bytes()))
 
         source.reply("檔案傳送完成")
 
     def on_command_list(self, source: CommandSource = None, ctx: dict = {}) -> None:
         config = self.config
-        path = Path(config.file_sync_path)
+        path, match = Path(config.file_sync_path), ctx.get("match", None)
         if not path.is_dir():
             source.reply(
                 RText(
@@ -94,11 +92,12 @@ class FileSyncPlugin(BasePlugin):
             str(f.relative_to(path)).removesuffix(config.file_sync_extension)
             for f in path.rglob(f"*{config.file_sync_extension}")
         )
+        files = set(f for f in files if match is not None and str(f).startswith(match))
 
         if not files:
             source.reply(
                 RText(
-                    "There are no archives in the archive directory - [檔案目錄中沒有檔案]",
+                    "There is no such archive in the archive catalog - [檔案目錄中沒有這樣的檔案]",
                     color=RColor.red,
                 )
             )
