@@ -38,13 +38,13 @@ jobs:
           artifacts: '*.mcdr,*.pyz,*.zip'
 
       - name: update ref
-        run: |
-          git config --global user.name "$user_name"
-          git config --global user.email "$user_email"
-
-          git tag -f develop
-          git push -f https://_:"$token"@github.com/${{ github.event.repository.full_name }}.git origin develop
         env:
           token: ${{ secrets.GITHUB_TOKEN }}
           user_name: GitHub Action
           user_email: action@github.com
+        run: |
+          git config --global user.name "$user_name"
+          git config --global user.email "$user_email"
+
+          git remote add origin https://"$token"@github.com/${{ github.event.repository.full_name }}
+          git tag -f develop; git push -f origin develop
