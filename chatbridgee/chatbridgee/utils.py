@@ -83,13 +83,13 @@ class FileEncode:
     def decode(cls, raw_data: bytes) -> "FileEncode":
         """encode to data"""
         with BytesIO(raw_data) as bio:
-            flag = int.from_bytes(bio.read(1))
-            path = bio.read(int.from_bytes(bio.read(2))).decode("utf-8")
-            data = bio.read(int.from_bytes(bio.read(2)))
+            flag = int.from_bytes(bio.read(1), "big")
+            path = bio.read(int.from_bytes(bio.read(2), "big")).decode("utf-8")
+            data = bio.read(int.from_bytes(bio.read(2), "big"))
             server_name = (
                 None
                 if bio.end
-                else bio.read(int.from_bytes(bio.read(2))).decode("utf-8")
+                else bio.read(int.from_bytes(bio.read(2), "big")).decode("utf-8")
             )
 
             return cls(path, data, flag=flag, server_name=server_name)
