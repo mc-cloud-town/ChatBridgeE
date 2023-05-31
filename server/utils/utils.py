@@ -1,4 +1,5 @@
 from io import BytesIO as IoBytesIO
+from pathlib import Path
 from typing import Any
 
 __all__ = (
@@ -62,13 +63,13 @@ class FileEncode:
 
     def __init__(
         self,
-        path: str,
+        path: str | Path,
         data: bytes,
         *,
         flag: int = 0,
         server_name: str | None = None,
     ) -> None:
-        self.path = path
+        self.path = str(path)
         self.data = data
         self.flag = flag
         self.server_name = server_name
