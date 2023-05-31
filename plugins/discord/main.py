@@ -11,6 +11,7 @@ from .client import Bot, fix_msg
 class DiscordConfig(Config):
     token: str = "<you discord token here>"
     prefix: str = "!!"
+    sync_channel: int = 123400000000000000
     channel_for_chat = 123400000000000000
     player_join_channel: int = 123400000000000000
     command_channels: list[int] = [123400000000000000]
@@ -27,6 +28,7 @@ class Discord(Plugin, config=DiscordConfig):
         self.bot = Bot(self, loop=self.loop)
         self.chat_channel: TextChannel | None = ...
         self.player_join_channel: TextChannel | None = ...
+        self.sync_channel: TextChannel | None = ...
 
     def on_load(self):
         config = self.config
@@ -127,10 +129,16 @@ class Discord(Plugin, config=DiscordConfig):
         data = FileEncode.decode(raw_data)
         server_name, file_path = data.server_name, data.path
 
+        if self.sync_channel is ...:
+            self.sync_channel = await self.bot.get_or_fetch_channel(
+                self.config.get("sync_channel")
+            )
+
         await self.send(
             f"A file published from {server_name} - 從 {server_name} 發佈的檔案",
             ctx=ctx,
             file=File(data, Path(file_path).name),
+            channel=self.sync_channel,
         )
 
 
