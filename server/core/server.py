@@ -9,9 +9,10 @@ from typing import Any, Callable, Coroutine, List, Optional, TypeVar, Union
 from aiohttp import web
 from socketio import AsyncServer
 
+
 from ..context import Context
 from ..plugin import PluginMixin, SoloSetup
-from ..utils import MISSING, FormatMessage
+from ..utils import MISSING, FormatMessage, FileEncode
 from . import CommandManager
 from .config import Config, UserData
 
@@ -193,14 +194,20 @@ class BaseServer(PluginMixin):
             self.dispatch("disconnect", client)
 
         @sio_server.on("*")
-        async def else_event(event_name: str, sid: str, data: Any = None) -> None:
+        async def else_event(event_name: str, sid: str, raw_data: Any = None) -> None:
             log.debug(f"收到從 {sid} 發送的事件 {event_name}")
-            args = [data]
+            args, ctx = [raw_data], self.clients.get(sid)
 
-            if type(data) is list:
-                args = data
+            if type(raw_data) is list:
+                args = raw_data
 
-            self.dispatch(event_name, self.clients.get(sid), *args)
+            if event_name == "file_sync":
+                data = FileEncode.decode(raw_data)
+                data.server_name = ctx.display_name
+
+                args = [data]
+
+            self.dispatch(event_name, ctx, *args)
 
     def create_context(self, sid: str, user: UserData, auth: dict = {}) -> Context:
         return Context(self, sid, user, auth)

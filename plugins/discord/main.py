@@ -126,8 +126,7 @@ class Discord(Plugin, config=DiscordConfig):
         )
 
     @Plugin.listener
-    async def on_file_sync(self, ctx: Context, raw_data: bytes):
-        data = FileEncode.decode(raw_data)
+    async def on_file_sync(self, ctx: Context, data: FileEncode):
         server_name, file_path = data.server_name, data.path
 
         if self.sync_channel is ...:
