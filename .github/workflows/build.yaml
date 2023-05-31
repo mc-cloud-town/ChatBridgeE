@@ -31,7 +31,8 @@ jobs:
       - name: upload Release
         uses: ncipollo/release-action@v1
         with:
+          allowUpdates: true
+          removeArtifacts: true
           makeLatest: true
           token: ${{ secrets.GITHUB_TOKEN }}
-          tag: latest
           artifacts: '*.mcdr,*.pyz,*.zip'
