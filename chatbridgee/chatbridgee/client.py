@@ -96,22 +96,20 @@ def on_load(server: PluginServerInterface, old_module):
 
     @new_thread("chatbridge-start")
     def start():
-        with cb_lock:
-            auth = config.client_info
-            try:
-                sio.connect(
-                    f"http://{config.server_address}",
-                    auth={"name": auth.name, "password": auth.password, **auth_else},
-                )
-                sio.wait()
-            except exceptions.ConnectionError:
-                server.logger.error(f"無法連接到 {config.server_address}\n五秒後重試")
-                time.sleep(5)
-                start()
-            except TimeoutError:
-                server.logger.error(f"連線到 {config.server_address} 超時\n五秒後重試")
-                time.sleep(5)
-                start()
+        auth = config.client_info
+        try:
+            sio.connect(
+                f"http://{config.server_address}",
+                auth={"name": auth.name, "password": auth.password, **auth_else},
+            )
+        except exceptions.ConnectionError:
+            server.logger.error(f"無法連接到 {config.server_address}\n五秒後重試")
+            time.sleep(5)
+            start()
+        except TimeoutError:
+            server.logger.error(f"連線到 {config.server_address} 超時\n五秒後重試")
+            time.sleep(5)
+            start()
 
     start()
 
