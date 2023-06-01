@@ -1,5 +1,6 @@
 from abc import ABC
 
+import socketio
 from mcdreforged.api.all import (
     PluginServerInterface,
     RColor,
@@ -9,7 +10,6 @@ from mcdreforged.api.all import (
 )
 
 from .config import ChatBridgeEConfig
-from .utils import Client
 
 META = ServerInterface.get_instance().as_plugin_server_interface().get_self_metadata()
 
@@ -22,7 +22,7 @@ class BasePlugin(ABC):
     def __init__(
         self,
         server: PluginServerInterface,
-        sio: Client,
+        sio: socketio.Client,
         config: ChatBridgeEConfig,
     ) -> None:
         self.server = server

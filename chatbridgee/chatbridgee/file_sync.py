@@ -36,7 +36,7 @@ class FileSyncPlugin(BasePlugin):
             )
         )
 
-    async def on_file_sync(self, raw_data: bytes) -> None:
+    def on_file_sync(self, raw_data: bytes) -> None:
         data = FileEncode.decode(raw_data)
         root = False  # TODO add root option from flag
         file_path, server_name = data.path, data.server_name
