@@ -1,5 +1,8 @@
 from io import BytesIO as IoBytesIO
 from pathlib import Path
+from asyncio import AbstractEventLoop
+
+from socketio import AsyncClient
 
 __all__ = (
     "BytesIO",
@@ -93,3 +96,16 @@ class FileEncode:
             )
 
             return cls(path, data, flag=flag, server_name=server_name)
+
+
+class Client(AsyncClient):
+    def __init__(self, *args, loop: AbstractEventLoop, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.loop = loop
+
+    def emit(self, event: str, data=None, namespace=None, callback=None):
+        self.loop.create_task(super().emit(event, data, namespace, callback))
+
+    def send_event(self, event: str, data: str | dict | list | bytes = None):
+        if self.connected and self.loop.is_running():
+            self.emit(event, data)

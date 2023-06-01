@@ -1,9 +1,8 @@
+import asyncio
 import time
 from pathlib import Path
-from threading import Lock
-from typing import Union
+from threading import Thread
 
-import socketio
 from mcdreforged.api.all import (
     CommandSource,
     Info,
@@ -17,28 +16,21 @@ from .config import ChatBridgeEConfig
 from .file_sync import FileSyncPlugin
 from .plugin import META, tr
 from .read import ReadClient
+from .utils import Client
 
-sio = socketio.Client()
-cb_lock = Lock()
-send_lock = Lock()
+loop = asyncio.new_event_loop()
+sio = Client(loop=loop)
 
 config: ChatBridgeEConfig = None
 
 
-@new_thread("chatbridge-send-data")
-def send_event(event: str, data: Union[str, dict, list] = None):
-    if sio.connected:
-        with send_lock:
-            sio.emit(event, data)
-
-
 @sio.event
-def connect():
+async def connect():
     print("connection established")
 
 
 @sio.event
-def disconnect():
+async def disconnect():
     print("disconnected from server")
 
 
@@ -95,44 +87,56 @@ def on_load(server: PluginServerInterface, old_module):
     server.register_help_message("!!cbe", tr("help_summary"))
     server.register_command(Literal("!!cbe").runs(display_help))
 
-    @new_thread("chatbridge-start")
-    def start():
-        with cb_lock:
-            auth = config.client_info
-            try:
-                sio.connect(
-                    f"http://{config.server_address}",
-                    auth={"name": auth.name, "password": auth.password, **auth_else},
-                )
-                sio.wait()
-            except exceptions.ConnectionError:
-                server.logger.error(f"無法連接到 {config.server_address}\n五秒後重試")
-                time.sleep(5)
-                start()
-            except TimeoutError:
-                server.logger.error(f"連線到 {config.server_address} 超時\n五秒後重試")
-                time.sleep(5)
-                start()
+    async def runner():
+        auth = config.client_info
+        try:
+            await sio.connect(
+                f"http://{config.server_address}",
+                auth={"name": auth.name, "password": auth.password, **auth_else},
+            )
+            await sio.wait()
+        except exceptions.ConnectionError:
+            server.logger.error(f"無法連接到 {config.server_address}\n五秒後重試")
+            time.sleep(5)
+            await runner()
+        except TimeoutError:
+            server.logger.error(f"連線到 {config.server_address} 超時\n五秒後重試")
+            time.sleep(5)
+            await runner()
 
-    start()
+    def run_forever():
+        def stop_loop_on_completion(f):
+            loop.stop()
+
+        server.logger.info("loop started")
+        future = asyncio.ensure_future(runner(), loop=loop)
+        future.add_done_callback(stop_loop_on_completion)
+
+        try:
+            loop.run_forever()
+        finally:
+            future.remove_done_callback(stop_loop_on_completion)
+            loop.close()
+            server.logger.info("loop stopped")
+
+    Thread(target=run_forever, name="chatbridge-loop_forever", daemon=True).start()
 
 
 @new_thread("chatbridge-disconnect")
 def on_unload(server: PluginServerInterface):
-    with cb_lock:
-        sio.disconnect()
+    loop.create_task(sio.disconnect())
 
 
 def on_server_start(server: PluginServerInterface):
-    send_event("server_start")
+    sio.send_event("server_start")
 
 
 def on_server_startup(server: PluginServerInterface):
-    send_event("server_startup")
+    sio.send_event("server_startup")
 
 
 def on_server_stop(server: PluginServerInterface, return_code: int):
-    send_event("server_stop")
+    sio.send_event("server_stop")
 
 
 def on_info(server: PluginServerInterface, info: Info):
@@ -140,12 +144,12 @@ def on_info(server: PluginServerInterface, info: Info):
         if info.player in config.chat_blacklist_names:
             return
 
-        send_event("player_chat", [info.player, info.content])
+        sio.send_event("player_chat", [info.player, info.content])
 
 
 def on_player_joined(server: PluginServerInterface, player_name: str, info: Info):
-    send_event("player_joined", player_name)
+    sio.send_event("player_joined", player_name)
 
 
 def on_player_left(server: PluginServerInterface, player_name: str):
-    send_event("player_left", player_name)
+    sio.send_event("player_left", player_name)

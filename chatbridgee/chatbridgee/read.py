@@ -34,7 +34,7 @@ class ReadClient(BasePlugin):
         self.sio.on("player_left", self.on_player_left)
         self.sio.on("extra_command", self.on_extra_command)
 
-    def on_chat(self, msg: dict) -> None:
+    async def on_chat(self, msg: dict) -> None:
         data = RTextJSON(msg)
 
         self.server.say(data)
@@ -46,26 +46,28 @@ class ReadClient(BasePlugin):
     # def on_new_disconnect(self, server_name: str) -> None:
     #     print(server_name)
 
-    def on_server_startup(self, server_name: str) -> None:
+    async def on_server_startup(self, server_name: str) -> None:
         self.from_server(server_name, "啟動中...")
 
-    def on_server_start(self, server_name: str) -> None:
+    async def on_server_start(self, server_name: str) -> None:
         self.from_server(server_name, "啟動完成")
 
-    def on_server_stop(self, server_name: str) -> None:
+    async def on_server_stop(self, server_name: str) -> None:
         self.from_server(server_name, "伺服器關閉")
 
-    def on_player_chat(self, server_name: str, player_name: str, content: str) -> None:
+    async def on_player_chat(
+        self, server_name: str, player_name: str, content: str
+    ) -> None:
         self.from_server(server_name, f"<{player_name}> {content}")
 
-    def on_player_joined(self, server_name: str, player_name: str) -> None:
+    async def on_player_joined(self, server_name: str, player_name: str) -> None:
         self.from_server(
             server_name,
             f"{player_name} 加入了 {server_name}",
             set_start=False,
         )
 
-    def on_player_left(self, server_name: str, player_name: str) -> None:
+    async def on_player_left(self, server_name: str, player_name: str) -> None:
         self.from_server(
             server_name,
             f"{player_name} 離開了 {server_name}",
@@ -82,7 +84,7 @@ class ReadClient(BasePlugin):
     #
     # <unknown command>
     #   code: -1
-    def on_extra_command(self, command: str) -> None:
+    async def on_extra_command(self, command: str) -> None:
         result = {"command": command, "code": -1}
         if command.startswith("stats "):
             try:
