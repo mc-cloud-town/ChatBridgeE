@@ -90,7 +90,10 @@ class FileSyncPlugin(BasePlugin):
             return
 
         files = set(
-            f.relative_to(path).as_posix().removesuffix(config.file_sync_extension)
+            (
+                f.relative_to(path).as_posix().removesuffix(config.file_sync_extension),
+                f.stat().st_size,
+            )
             for f in path.rglob(f"*{config.file_sync_extension}")
             if f.name.startswith(match)
         )
@@ -108,8 +111,8 @@ class FileSyncPlugin(BasePlugin):
             RText(
                 "A list of files - [檔案列表]: \n"
                 + "\n".join(
-                    f"- {i+1}. {file} ({format_number(Path(file).stat().st_size)})"
-                    for i, file in enumerate(files)
+                    f"- {i+1}. {file} ({format_number(size)})"
+                    for i, (file, size) in enumerate(files)
                 ),
                 color=RColor.gray,
             )
