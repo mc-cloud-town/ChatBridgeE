@@ -143,7 +143,7 @@ class Bot(commands.Bot):
                     )
 
                     for index, file in enumerate(files):
-                        reply_msg.edit(
+                        await reply_msg.edit(
                             "Please wait later... [同步中請稍後...]"
                             f"({index+1}/{len(files)})",
                             mention_author=False,
