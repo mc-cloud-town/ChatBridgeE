@@ -123,26 +123,40 @@ def parse_type(data: Any, cls: Type[_T]) -> _T:
 
 class ConfigDataMeta(type):
     def __new__(cls, name: str, bases: tuple, attrs: dict[str, Any], **kwargs):
-        attrs["__annotations__"] = {
-            k: type(v)
-            for k, v in attrs.items()
-            if not k.startswith("_")
-            and k not in cls.__annotations__
-            and not isinstance(v, (classmethod, staticmethod, property))
-            and not callable(v)
-        }
         attrs["__annotations__"].update(cls.__annotations__)
+        attrs["__annotations__"].update(
+            {
+                k: type(v)
+                for k, v in attrs.items()
+                if not k.startswith("_")
+                and not callable(v)
+                and not isinstance(v, (classmethod, staticmethod, property))
+            }
+        )
+        annotations: dict = attrs["__annotations__"]
         attrs["__comments__"] = {
             k[1:]: str(v)
             for k, v in attrs.items()
-            if k.startswith("_") and not k.startswith("__") and k[1:] in attrs
+            if k.startswith("_") and not k.startswith("__") and k[1:] in annotations
         }
+        required_keys = set()
+        for k in annotations.keys():
+            try:
+                attrs[k]
+            except KeyError:
+                required_keys.add(k)
+        attrs["__required_keys__"] = required_keys
+        attrs["__optional_keys__"] = set(
+            k for k in annotations.keys() if k not in required_keys
+        )
 
         return super().__new__(cls, name, bases, attrs, **kwargs)
 
 
 class Config(metaclass=ConfigDataMeta):
-    __comments__: ClassVar[dict[str, str]] = {}
+    __comments__: ClassVar[dict[str, str]]
+    __required_keys__: ClassVar[set[str]]
+    __optional_keys__: ClassVar[set[str]]
 
     def __init__(self, **kwargs: Any) -> None:
         if tmp := self._set_attr(kwargs):
@@ -187,13 +201,3 @@ class Config(metaclass=ConfigDataMeta):
         return f"<{self.__class__.__name__} {arg}".strip() + ">"
 
     __repr__ = __str__
-
-
-class Test(Config):
-    a: str = "a"
-    b = "b"
-
-
-print(Test.get_hint_type())
-# __required_keys__
-# __optional_keys__
