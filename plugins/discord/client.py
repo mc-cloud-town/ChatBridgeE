@@ -90,27 +90,27 @@ class Bot(commands.Bot):
         ):
             return await self.process_commands(msg)
 
-        author = msg.author
-        if msg.channel.id != self.chat_channel or author == self.user or author.system:
+        if (author := msg.author) == self.user or author.system:
             return
 
-        if (ref_msg := await self.get_reference_message(msg)) is not None:
-            ref_author = ref_msg.author
-            # ┌─<XX> XX
-            await self.server.send(
-                ["g ┌─<", "r " + (ref_author.nick or ref_author.name), "g > "]
-                + self.style_message(ref_msg),
-            )
+        if msg.channel.id == self.chat_channel:
+            if (ref_msg := await self.get_reference_message(msg)) is not None:
+                ref_author = ref_msg.author
+                # ┌─<XX> XX
+                await self.server.send(
+                    ["g ┌─<", "r " + (ref_author.nick or ref_author.name), "g > "]
+                    + self.style_message(ref_msg),
+                )
 
-        content = ["f [", "r Discord", "f ] "]
-        content += ["f <", f"r {author.nick or author.name}", "f > "]
-        content += self.style_message(msg)
-        content = FormatMessage(*content)
+            content = ["f [", "r Discord", "f ] "]
+            content += ["f <", f"r {author.nick or author.name}", "f > "]
+            content += self.style_message(msg)
+            content = FormatMessage(*content)
 
-        self.log.info(f"discord 收到訊息 {Text.from_ansi(content.ansi)}")
+            self.log.info(f"discord 收到訊息 {Text.from_ansi(content.ansi)}")
 
-        # [Discord] <XX> XX
-        await self.server.send(content)
+            # [Discord] <XX> XX
+            await self.server.send(content)
 
         # sync_channel
         if msg.channel.id == self.config.get("sync_channel"):
