@@ -118,11 +118,3 @@ def parse_type(data: Any, cls: Type[_T]) -> _T:
         raise warn_type(*args)
 
     raise TypeError(f"Type not supported: {cls.__name__}")
-
-
-class Test(ConfigData):
-    A: str = "A"
-
-
-s = Test(A="1")
-print(s.A)

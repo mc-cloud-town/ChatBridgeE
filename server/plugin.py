@@ -290,12 +290,14 @@ class SoloSetup:
                 log.exception(e)
 
     def unload(self, server: "BaseServer") -> None:
-        sys.modules.pop(self.name, None)
+        sys.modules.pop(lib_name := self.name, None)
+        if self.type == SoloSetupType.MODULE:
+            lib_name = lib_name.removesuffix(".main")
 
         for name in sys.modules.copy().keys():
             if self.type == SoloSetupType.MODULE:
                 name = name.removesuffix(".main")
-            if _is_submodule(self.name, name):
+            if _is_submodule(lib_name, name):
                 log.debug(
                     f"Remove module {name!r} when unloading plugin {repr(self)}, "
                     f"success={sys.modules.pop(name, None)}"

@@ -2,15 +2,25 @@ import asyncio
 from asyncio import AbstractEventLoop
 from datetime import datetime
 from functools import reduce
+import time
 from typing import Optional
 
 import discord
-from discord import ApplicationContext, Color, Embed, Intents, Message, TextChannel
+from discord import (
+    ApplicationContext,
+    Color,
+    Embed,
+    Intents,
+    Message,
+    Reaction,
+    TextChannel,
+    User,
+)
 from discord.ext import commands
 from rich.text import Text
 
 from server import Plugin
-from server.utils import FormatMessage, format_number
+from server.utils import FileEncode, FormatMessage, format_number
 
 
 class Bot(commands.Bot):
@@ -101,6 +111,49 @@ class Bot(commands.Bot):
 
         # [Discord] <XX> XX
         await self.server.send(content)
+
+        # sync_channel
+        if msg.channel.id == self.config.get("sync_channel"):
+            files = [
+                FileEncode(path=attachment.filename, data=await attachment.read())
+                for attachment in msg.attachments
+                if attachment.filename.endswith(self.config.get("sync_file_extensions"))
+            ]
+
+            if files:
+
+                def check(reaction: Reaction, user: User) -> bool:
+                    return (
+                        user == msg.author
+                        and reaction.message == msg
+                        and reaction.emoji == "❓"
+                    )
+
+                await msg.add_reaction("❓")
+                try:
+                    await self.wait_for("reaction_add", check=check, timeout=60)
+                except TimeoutError:
+                    await msg.clear_reaction("❓")
+                else:
+                    await msg.clear_reaction("❓")
+                    now_time = time.time()
+                    reply_msg = await msg.reply(
+                        f"Please wait later... [同步中請稍後...](0/{len(files)})",
+                        mention_author=False,
+                    )
+
+                    for index, file in enumerate(files):
+                        reply_msg.edit(
+                            "Please wait later... [同步中請稍後...]"
+                            f"({index+1}/{len(files)})"
+                        )
+                        await self.server.emit("file_sync", file)
+
+                    await msg.add_reaction("✅")
+                    await reply_msg.edit(
+                        "Synchronization completed [同步完成] "
+                        f"- {time.time() - now_time:.2f}s"
+                    )
 
     async def get_or_fetch_message(
         self,

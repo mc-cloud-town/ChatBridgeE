@@ -13,6 +13,7 @@ class DiscordConfig(Config):
     token: str = "<you discord token here>"
     prefix: str = "!!"
     sync_channel: int = 123400000000000000
+    sync_file_extensions: list[str] = ".schem"
     channel_for_chat = 123400000000000000
     player_join_channel: int = 123400000000000000
     command_channels: list[int] = [123400000000000000]
