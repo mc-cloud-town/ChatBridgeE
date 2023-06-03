@@ -19,6 +19,7 @@ __all__ = (
 )
 
 _T = TypeVar("_T")
+_BASIC_TYPES = (NoneType, bool, int, float, str, list, dict)
 
 
 class ConfigData:
@@ -50,9 +51,6 @@ class ConfigData:
             setattr(self, name, parse_type(value, type))
 
         return kwargs
-
-
-_BASIC_TYPES = (NoneType, bool, int, float, str, list, dict)
 
 
 def parse_type(data: Any, cls: Type[_T]) -> _T:
