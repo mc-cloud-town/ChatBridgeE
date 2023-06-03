@@ -145,14 +145,16 @@ class Bot(commands.Bot):
                     for index, file in enumerate(files):
                         reply_msg.edit(
                             "Please wait later... [同步中請稍後...]"
-                            f"({index+1}/{len(files)})"
+                            f"({index+1}/{len(files)})",
+                            mention_author=False,
                         )
                         await self.server.emit("file_sync", file)
 
                     await msg.add_reaction("✅")
                     await reply_msg.edit(
                         "Synchronization completed [同步完成] "
-                        f"- {time.time() - now_time:.2f}s"
+                        f"- {time.time() - now_time:.2f}s",
+                        mention_author=False,
                     )
 
     async def get_or_fetch_message(
