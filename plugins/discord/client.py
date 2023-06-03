@@ -114,13 +114,12 @@ class Bot(commands.Bot):
 
         # sync_channel
         if msg.channel.id == self.config.get("sync_channel"):
-            files = [
+            if files := [
                 FileEncode(path=attachment.filename, data=await attachment.read())
                 for attachment in msg.attachments
                 if attachment.filename.endswith(self.config.get("sync_file_extensions"))
-            ]
-
-            if files:
+            ]:
+                await msg.add_reaction("❓")
 
                 def check(reaction: Reaction, user: User) -> bool:
                     return (
@@ -129,7 +128,6 @@ class Bot(commands.Bot):
                         and reaction.emoji == "❓"
                     )
 
-                await msg.add_reaction("❓")
                 try:
                     await self.wait_for("reaction_add", check=check, timeout=60)
                 except TimeoutError:
@@ -146,7 +144,6 @@ class Bot(commands.Bot):
                         await reply_msg.edit(
                             "Please wait later... [同步中請稍後...]"
                             f"({index+1}/{len(files)})",
-                            mention_author=False,
                         )
                         await self.server.emit("file_sync", file)
 
@@ -154,7 +151,6 @@ class Bot(commands.Bot):
                     await reply_msg.edit(
                         "Synchronization completed [同步完成] "
                         f"- {time.time() - now_time:.2f}s",
-                        mention_author=False,
                     )
 
     async def get_or_fetch_message(
