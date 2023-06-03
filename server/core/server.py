@@ -194,8 +194,8 @@ class BaseServer(PluginMixin):
 
         @sio_server.on("*")
         async def else_event(event_name: str, sid: str, raw_data: Any = None) -> None:
-            log.debug(f"收到從 {sid} 發送的事件 {event_name}")
             args, ctx = [raw_data], self.clients.get(sid)
+            log.debug(f"收到從 [{ctx}] 發送的事件 {event_name}")
 
             if type(raw_data) is list:
                 args = raw_data
