@@ -115,7 +115,11 @@ class Bot(commands.Bot):
         # sync_channel
         if msg.channel.id == self.config.get("sync_channel"):
             if files := [
-                FileEncode(path=attachment.filename, data=await attachment.read())
+                FileEncode(
+                    path=attachment.filename,
+                    data=await attachment.read(),
+                    server_name="Discord",
+                )
                 for attachment in msg.attachments
                 if attachment.filename.endswith(self.config.get("sync_file_extensions"))
             ]:
