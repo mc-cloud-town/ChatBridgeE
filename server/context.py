@@ -38,11 +38,6 @@ class Context:
                 loop=server.loop,
             )
 
-    def __str__(self) -> str:
-        return self.display_name
-
-    __repr__ = __str__
-
     async def _cmd_callback_callback(self, ctx: "Context", result: dict) -> None:
         if not (command := result.get("command")):
             self.log.error("extra_command_callback: command is missing")
@@ -119,8 +114,23 @@ class Context:
             if exc_timeout:
                 raise e
 
+    @property
+    def name(self) -> str:
+        return self.user.name
+
     def __del__(self) -> None:
         self.server.remove_listener(
             self._cmd_callback_callback,
             name="cmd_callback",
         )
+
+    def __le__(self, other: Any) -> bool:
+        if isinstance(other, Context):
+            return self.user.name == other.user.name and self.sid == other.sid
+        if isinstance(other, str):
+            return self.user.name == other
+
+    def __str__(self) -> str:
+        return self.display_name
+
+    __repr__ = __str__

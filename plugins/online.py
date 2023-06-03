@@ -92,21 +92,23 @@ class Online(Plugin, config=OnlineConfig):
             if res := await client.execute_command("list"):
                 result.update({client: self.handle_minecraft(res["data"])})
 
+        result = {
+            k: set(s for s in v if s.strip())
+            for k, v in result.items()
+            if k.name in self.config.get("query_online_names", [])
+        }
+
         if order:
             ret = []
             for id in self.config.get("query_online_names", []):
                 for ctx, value in result.copy().items():
-                    if id == ctx.user.name:
+                    if ctx.name == id:
                         ret.append((ctx, value))
                         result.pop(ctx)
                         break
             return ret
 
-        return {
-            k: v
-            for k, v in result.items()
-            if k.user.name in self.config.get("query_online_names", [])
-        }
+        return result
 
     def on_unload(self) -> None:
         for client in self._glist_rcon_catch.values():
