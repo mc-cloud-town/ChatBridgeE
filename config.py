@@ -159,6 +159,9 @@ class Config(metaclass=ConfigDataMeta):
     __optional_keys__: ClassVar[set[str]]
 
     def __init__(self, **kwargs: Any) -> None:
+        for required in self.__required_keys__:
+            if required not in kwargs:
+                raise ValueError(f"Missing required argument: {required}")
         if tmp := self._set_attr(kwargs):
             raise ValueError(f"Invalid arguments: {', '.join(tmp.keys())}")
 
