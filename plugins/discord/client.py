@@ -145,7 +145,7 @@ class Bot(commands.Bot):
                             "Please wait later... [同步中請稍後...]"
                             f"({index+1}/{len(files)})",
                         )
-                        await self.server.emit("file_sync", file)
+                        await self.server.emit("file_sync", file.encode())
 
                     await msg.add_reaction("✅")
                     await reply_msg.edit(
