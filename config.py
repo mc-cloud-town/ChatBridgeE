@@ -5,6 +5,7 @@ from functools import lru_cache
 from types import NoneType, UnionType
 from typing import (
     Any,
+    ClassVar,
     Literal,
     Type,
     TypeVar,
@@ -15,49 +16,24 @@ from typing import (
 )
 
 __all__ = (
-    "ConfigData",
+    "Config",
     "parse_type",
 )
 
 _T = TypeVar("_T")
 _BASIC_TYPES = (NoneType, bool, int, float, str, list, dict, set, tuple)
+ConfigType = TypeVar("ConfigType", bound="Config")
 log = logging.getLogger("typehint")
 
 
-class ConfigData:
-    def __init__(self, **kwargs: Any) -> None:
-        if self._set_attr(kwargs):
-            raise TypeError(f"Invalid arguments: {', '.join(kwargs.keys())}")
-
-    @classmethod
-    @lru_cache()
-    def get_hint_type(cls) -> dict[str, Any]:
-        return {
-            name: type
-            for name, type in get_type_hints(cls).items()
-            if not name.startswith("_")
-        }
-
-    @classmethod
-    def default(cls):
-        return cls()
-
-    def _set_attr(self, kwargs: dict[str, Any], *, copy_default: bool = True) -> None:
-        kwargs = {k: v for k, v in kwargs.items() if not k.startswith("_")}.copy()
-        for name, type in self.get_hint_type().items():
-            default_value = getattr(self, name)
-            value = kwargs.pop(
-                name,
-                copy.copy(default_value) if copy_default else default_value,
-            )
-            setattr(self, name, parse_type(value, type))
-
-        return kwargs
+class TypeHintError(TypeError):
+    def __init__(self, *args: Any) -> None:
+        super().__init__(*args)
 
 
 def parse_type(data: Any, cls: Type[_T]) -> _T:
     def warn_type(*expected_type: Type):
-        return TypeError(
+        return TypeHintError(
             "Mismatched input type: expected class "
             + "|".join(map(lambda x: f"{x.__name__!r}", expected_type))
             + f" (deduced from {cls.__name__!r}) but found data with class "
@@ -143,3 +119,74 @@ def parse_type(data: Any, cls: Type[_T]) -> _T:
         raise warn_type(*args)
 
     raise TypeError(f"Type not supported: {cls.__name__}")
+
+
+class ConfigDataMeta(type):
+    def __new__(cls, name: str, bases: tuple, attrs: dict[str, Any], **kwargs):
+        attrs["__annotations__"] = {
+            k: type(v)
+            for k, v in attrs.items()
+            if not k.startswith("_")
+            and k not in cls.__annotations__
+            and not isinstance(v, (classmethod, staticmethod, property))
+            and not callable(v)
+        }
+        attrs["__comments__"] = {
+            k[1:]: str(v)
+            for k, v in attrs.items()
+            if k.startswith("_") and not k.startswith("__") and k[1:] in attrs
+        }
+
+        return super().__new__(cls, name, bases, attrs, **kwargs)
+
+
+class Config(metaclass=ConfigDataMeta):
+    __comments__: ClassVar[dict[str, str]] = {}
+
+    def __init__(self, **kwargs: Any) -> None:
+        if tmp := self._set_attr(kwargs):
+            raise ValueError(f"Invalid arguments: {', '.join(tmp.keys())}")
+
+    @classmethod
+    @lru_cache()
+    def get_hint_type(cls) -> dict[str, Any]:
+        return {
+            name: type
+            for name, type in get_type_hints(cls, globalns={}).items()
+            if not name.startswith("_")
+        }
+
+    @classmethod
+    def default(cls):
+        return cls()
+
+    def _set_attr(self, kwargs: dict[str, Any], *, copy_default: bool = True) -> None:
+        kwargs = {k: v for k, v in kwargs.items() if not k.startswith("_")}.copy()
+        for name, type in self.get_hint_type().items():
+            default_value = getattr(self, name)
+            value = kwargs.pop(
+                name,
+                copy.copy(default_value) if copy_default else default_value,
+            )
+            setattr(self, name, parse_type(value, type))
+
+        return kwargs
+
+    def dump(self) -> dict[str, Any]:
+        return {name: getattr(self, name) for name in self.get_hint_type()}
+
+    def get(self, key: str, default: _T = None) -> Any | _T:
+        return getattr(self, key, default)
+
+    def __getitem__(self, key: str) -> _T:
+        return self.get(key)
+
+    def __str__(self) -> str:
+        arg = " ".join(f"{k}={v}" for k, v in self.dump().items())
+        return f"<{self.__class__.__name__} {arg}".strip() + ">"
+
+    __repr__ = __str__
+
+
+class Test(Config):
+    a = "A"
