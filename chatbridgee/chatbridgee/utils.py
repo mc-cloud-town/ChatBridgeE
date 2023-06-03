@@ -7,6 +7,17 @@ __all__ = (
 )
 
 
+def format_number(number: int) -> str:
+    suffixes = " KMGTP"
+    suffix_index = 0
+
+    while number >= 1000 and suffix_index < len(suffixes) - 1:
+        number /= 1000
+        suffix_index += 1
+
+    return f"{number:.2f}".rstrip("0").rstrip(".") + suffixes[suffix_index]
+
+
 class BytesIO(IoBytesIO):
     def __len__(self) -> int:
         return self.getbuffer().nbytes

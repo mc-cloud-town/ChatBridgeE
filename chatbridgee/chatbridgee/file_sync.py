@@ -3,7 +3,7 @@ from pathlib import Path
 from mcdreforged.api.all import CommandSource, GreedyText, Literal, RColor, RText
 
 from .plugin import META, BasePlugin, tr
-from .utils import FileEncode
+from .utils import FileEncode, format_number
 
 
 def display_help(source: CommandSource):
@@ -105,6 +105,12 @@ class FileSyncPlugin(BasePlugin):
             return
 
         source.reply(
-            "A list of files - [檔案列表]: \n"
-            + "\n".join([f"{i+1}. {file}" for i, file in enumerate(files)])
+            RText(
+                "A list of files - [檔案列表]: \n"
+                + "\n".join(
+                    f"- {i+1}. {file} ({format_number(Path(file).stat().st_size)})"
+                    for i, file in enumerate(files)
+                ),
+                color=RColor.gray,
+            )
         )
