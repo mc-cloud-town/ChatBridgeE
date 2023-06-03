@@ -8,7 +8,7 @@ from importlib import util as import_util
 from importlib.machinery import ModuleSpec
 from pathlib import Path
 from types import ModuleType
-from typing import TYPE_CHECKING, Any, Callable, ClassVar, Optional, Type
+from typing import TYPE_CHECKING, Any, Callable, ClassVar, Optional, Type, TypeVar
 
 from .errors import ExtensionAlreadyLoaded, ExtensionNotFound, NoEntryPointError
 from .utils import MISSING
@@ -18,7 +18,7 @@ if TYPE_CHECKING:
     from .core.server import BaseServer, CoroFuncT
 
 __all__ = ("Plugin", "PluginMixin")
-
+T = TypeVar("T", bound="Plugin")
 log = logging.getLogger("chat-bridgee")
 
 
@@ -76,7 +76,7 @@ class Plugin(metaclass=PluginMeta):
         if self.__plugin_config__:
             self.config = self.__plugin_config__.load(_auto_create=True)
 
-    def _inject(self, server: "BaseServer") -> "Plugin":
+    def _inject(self: T, server: "BaseServer") -> T:
         try:
             for name, method_names in self.__plugin_events__.items():
                 for method_name in method_names:

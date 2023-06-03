@@ -9,10 +9,9 @@ from typing import Any, Callable, Coroutine, List, Optional, TypeVar, Union
 from aiohttp import web
 from socketio import AsyncServer
 
-
 from ..context import Context
 from ..plugin import PluginMixin, SoloSetup
-from ..utils import MISSING, FormatMessage, FileEncode
+from ..utils import MISSING, FileEncode, FormatMessage
 from . import CommandManager
 from .config import Config, UserData
 

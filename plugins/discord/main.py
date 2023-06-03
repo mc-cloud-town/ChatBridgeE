@@ -1,5 +1,6 @@
 from io import BytesIO
 from pathlib import Path
+
 from discord import File, TextChannel
 from discord.errors import LoginFailure
 
@@ -12,7 +13,9 @@ from .client import Bot, fix_msg
 class DiscordConfig(Config):
     token: str = "<you discord token here>"
     prefix: str = "!!"
+    sync_enabled: bool = True
     sync_channel: int = 123400000000000000
+    auto_sync_updata: bool = False
     sync_file_extensions: list[str] = ".schem"
     channel_for_chat = 123400000000000000
     player_join_channel: int = 123400000000000000
@@ -128,6 +131,9 @@ class Discord(Plugin, config=DiscordConfig):
 
     @Plugin.listener
     async def on_file_sync(self, ctx: Context, data: FileEncode):
+        if not self.config.get("sync_enabled"):
+            return
+
         server_name, file_path = data.server_name, data.path
 
         if self.sync_channel is ...:

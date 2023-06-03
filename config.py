@@ -1,4 +1,5 @@
 import copy
+import logging
 from enum import EnumMeta
 from functools import lru_cache
 from types import NoneType, UnionType
@@ -19,7 +20,8 @@ __all__ = (
 )
 
 _T = TypeVar("_T")
-_BASIC_TYPES = (NoneType, bool, int, float, str, list, dict)
+_BASIC_TYPES = (NoneType, bool, int, float, str, list, dict, set, tuple)
+log = logging.getLogger("typehint")
 
 
 class ConfigData:
@@ -62,7 +64,7 @@ def parse_type(data: Any, cls: Type[_T]) -> _T:
             f"{type(data).__name__!r}"
         )
 
-    origin = s if (s := get_origin(cls)) else cls
+    origin = get_origin(cls) or cls
 
     if cls is None:
         cls = NoneType
@@ -75,10 +77,27 @@ def parse_type(data: Any, cls: Type[_T]) -> _T:
         if isinstance(data, cls):
             return data
 
-        if cls is float and isinstance(data, int):
-            return float(data)
+        # int -> float
+        if cls is float:
+            if isinstance(data, int):
+                return float(data)
+            raise warn_type(float, int)
+        # [list|tuple] -> set
+        if cls is set and isinstance(data, (list, tuple)):
+            log.warning(
+                f"The target type is set, but the provided {type(data).__name__!r} "
+                "is automatically converted. However, the type definition is "
+                "different, and it is recommended to use set directly."
+            )
+            return set(data)
+        # [list|set] -> set
+        if cls is tuple and isinstance(data, (list, set)):
+            return tuple(data)
+        # [set|tuple] -> list
+        if cls is list and isinstance(data, (tuple, set)):
+            return list(data)
 
-        raise warn_type(int, float)
+        raise warn_type(cls)
     # Union
     elif origin in (Union, UnionType):
         for arg in (args := get_args(cls)):
@@ -109,6 +128,14 @@ def parse_type(data: Any, cls: Type[_T]) -> _T:
                 return cls[data]
             raise ValueError(f"Invalid enum value for {cls}")
         raise warn_type(str)
+    # TypeVar
+    elif isinstance(origin, TypeVar):
+        for arg in (args := origin.__constraints__ or (Any,)):
+            try:
+                return parse_type(data, arg)
+            except (ValueError, TypeError):
+                pass
+        raise warn_type(*args)
     # Literal
     elif origin is Literal:
         if data in (args := get_args(cls)):

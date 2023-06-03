@@ -7,8 +7,9 @@ import logging
 import struct
 from asyncio import AbstractEventLoop, BaseTransport, Future, Lock, Protocol
 from enum import Enum, auto
-from typing import TypedDict
+from typing import TypedDict, TypeVar
 
+T = TypeVar("T", bound="RconClientProtocol")
 log = logging.getLogger("chat-bridgee")
 
 
@@ -53,7 +54,7 @@ class RconClientProtocol(Protocol):
         self._lock = Lock()
         self.timeout = command_timeout
 
-    def __call__(self) -> "RconClientProtocol":
+    def __call__(self: T) -> T:
         return self
 
     def connection_made(self, transport):
@@ -157,7 +158,7 @@ class RconClient:
         await self.loop.create_connection(self.protocol, self.host, self.port)
         await self.protocol.authenticate(self.password)
 
-    async def __aenter__(self) -> RconClientProtocol:
+    async def __aenter__(self: T) -> T:
         await self.connect()
         return self
 

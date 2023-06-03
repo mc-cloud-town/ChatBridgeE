@@ -1,7 +1,7 @@
 import json
 import logging
 from pathlib import Path
-from typing import Any, Dict, Generic, Literal, Optional, TypeVar, NamedTuple, Union
+from typing import Any, Dict, Generic, Literal, NamedTuple, Optional, TypeVar, Union
 
 import yaml
 
