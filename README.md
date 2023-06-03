@@ -53,26 +53,56 @@ flowchart LR
 #### `server_start` -> `server_start` [C-A]
 
 客戶端伺服器啟動中的事件
+> args: [ctx: Context]
 
 #### `server_startup` -> `server_startup` [C-A]
 
 客戶端伺服器啟動完成的事件
+> args: [ctx: Context]
 
 #### `server_stop` -> `server_stop` [C-A]
 
 客戶端伺服器關閉的事件
+> args: [ctx: Context]
 
 #### `player_chat` -> `player_chat` [C-A]
 
 於客戶端伺服器玩家發送的訊息事件
+> args: [ctx: Context, player_name: str, content: str]
 
 #### `player_joined` -> `player_joined` [C-A]
 
 於客戶端伺服器玩家加入的訊息事件
+> args: [ctx: Context, player_name: str]
 
 #### `player_left` -> `player_left` [C-A]
 
 於客戶端伺服器玩家退出的訊息事件
+> args: [ctx: Context, player_name: str]
+
+#### `file_sync` -> `file_sync` [C-A]
+
+檔案同步事件，需搭配 `FileEncode` 類別，將會把資料編譯成 `bytes` 以下為生成的數據範例:
+
+| `offset` | `bytes` | `description`          |
+| -------- | ------- | ---------------------- |
+| `0`      | `1`     | flag                   |
+| `1`      | `2`     | path length (n)        |
+| `3`      | `n`     | path                   |
+| `3+n`    | `2`     | data length (m)        |
+| `5+n`    | `m`     | data                   |
+| `5+n+m`  | `2`     | server name length (o) |
+| `7+n+m`  | `o`     | server name            |
+
+進行編碼時 -> `FileEncode(...args).encode()`
+進行解碼時 -> `FileEncode.decode(<bytes>)`
+
+`FileEncode` 類別分別於:
+
+- `Client` -> `chatbridgee/utils.py` (`from chatbridgee.utils import FileEncode`)
+- `Server` -> `server/utils/utils.py` (`from server.utils import FileEncode`)
+
+> args: [ctx: Context, data: FileEncode]
 
 ### 一對一事件 [S-C]|[C-S]
 
