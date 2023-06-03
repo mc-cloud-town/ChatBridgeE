@@ -131,6 +131,7 @@ class ConfigDataMeta(type):
             and not isinstance(v, (classmethod, staticmethod, property))
             and not callable(v)
         }
+        attrs["__annotations__"].update(cls.__annotations__)
         attrs["__comments__"] = {
             k[1:]: str(v)
             for k, v in attrs.items()
@@ -152,7 +153,7 @@ class Config(metaclass=ConfigDataMeta):
     def get_hint_type(cls) -> dict[str, Any]:
         return {
             name: type
-            for name, type in get_type_hints(cls, globalns={}).items()
+            for name, type in get_type_hints(cls).items()
             if not name.startswith("_")
         }
 
@@ -189,4 +190,10 @@ class Config(metaclass=ConfigDataMeta):
 
 
 class Test(Config):
-    a = "A"
+    a: str = "a"
+    b = "b"
+
+
+print(Test.get_hint_type())
+# __required_keys__
+# __optional_keys__
