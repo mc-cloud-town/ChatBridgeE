@@ -142,12 +142,12 @@ class Bot(commands.Bot):
                         return
                     else:
                         await msg.clear_reaction("❓")
-                        now_time = time.time()
-                        reply_msg = await msg.reply(
-                            f"Please wait later... [同步中請稍後...](0/{len(files)})",
-                            mention_author=False,
-                        )
 
+                now_time = time.time()
+                reply_msg = await msg.reply(
+                    f"Please wait later... [同步中請稍後...](0/{len(files)})",
+                    mention_author=False,
+                )
                 for index, file in enumerate(files):
                     await reply_msg.edit(
                         "Please wait later... [同步中請稍後...]" f"({index+1}/{len(files)})",
