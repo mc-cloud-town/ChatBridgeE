@@ -16,13 +16,13 @@ from typing import (
 )
 
 __all__ = (
-    "Config",
+    "Data",
     "parse_type",
 )
 
 _T = TypeVar("_T")
 _BASIC_TYPES = (NoneType, bool, int, float, str, list, dict, set, tuple)
-ConfigType = TypeVar("ConfigType", bound="Config")
+DataType = TypeVar("DataType", bound="Data")
 log = logging.getLogger("typehint")
 
 
@@ -121,7 +121,7 @@ def parse_type(data: Any, cls: Type[_T]) -> _T:
     raise TypeError(f"Type not supported: {cls.__name__}")
 
 
-class ConfigDataMeta(type):
+class DataMeta(type):
     def __new__(cls, name: str, bases: tuple, attrs: dict[str, Any], **kwargs):
         attrs["__annotations__"].update(cls.__annotations__)
         attrs["__annotations__"].update(
@@ -153,7 +153,7 @@ class ConfigDataMeta(type):
         return super().__new__(cls, name, bases, attrs, **kwargs)
 
 
-class Config(metaclass=ConfigDataMeta):
+class Data(metaclass=DataMeta):
     __comments__: ClassVar[dict[str, str]]
     __required_keys__: ClassVar[set[str]]
     __optional_keys__: ClassVar[set[str]]
@@ -178,10 +178,16 @@ class Config(metaclass=ConfigDataMeta):
     def default(cls):
         return cls()
 
-    def _set_attr(self, kwargs: dict[str, Any], *, copy_default: bool = True) -> None:
+    def _set_attr(
+        self,
+        kwargs: dict[str, Any],
+        *,
+        copy_default: bool = True,
+        default: Any = ...,
+    ) -> dict[str, Any]:
         kwargs = {k: v for k, v in kwargs.items() if not k.startswith("_")}.copy()
         for name, type in self.get_hint_type().items():
-            default_value = getattr(self, name)
+            default_value = getattr(self, name, default)
             value = kwargs.pop(
                 name,
                 copy.copy(default_value) if copy_default else default_value,
@@ -189,6 +195,9 @@ class Config(metaclass=ConfigDataMeta):
             setattr(self, name, parse_type(value, type))
 
         return kwargs
+
+    def merge(self, data: dict[str, Any]) -> dict[str, Any]:
+        return self._set_attr(data)
 
     def dump(self) -> dict[str, Any]:
         return {name: getattr(self, name) for name in self.get_hint_type()}
