@@ -82,20 +82,15 @@ def parse(text: str):
 
         if char == "[":
             catch["["].append(offset)
-        elif catch and char in "]()":
-            s = ""
-            for k in "[]()":
-                if char == k and catch.get(s):
-                    catch[k].append(offset)
-                    break
-                s = k
-            else:
-                continue  # fast skip
-
-            if t4 := catch.get(")", [None]).pop():
-                t1, t2, t3 = catch.get("["), catch.get("]"), catch.get("(")
-                t1, t2, t3 = t1.pop(), t2.pop(), t3.pop()
-
+        elif char == "]" and catch.get("["):
+            catch["]"].append(offset)
+        elif char == "(" and catch.get("]"):
+            catch["("].append(offset)
+        elif char == ")" and (t4 := catch.pop(")", [None])):
+            catch[")"].append(offset)
+            t1, t2, t3 = catch.get("["), catch.get("]"), catch.get("(")
+            t1, t2, t3 = t1.pop(), t2.pop(), t3.pop()
+            # print(text[t1 : t2 - 1], text[t3 : t4 - 1])
         # elif char == "*":
         #     ...
         # elif char == "_":
@@ -108,11 +103,16 @@ def parse(text: str):
         #     ...
 
 
-start = time.perf_counter()
-for _ in range(100000):
-    parse("awa [run command](command:)")
-end = time.perf_counter()
-print(f"{end - start:.12f}s")
+s = []
+for i in range(99):
+    start = time.perf_counter()
+    for _ in range(100000):
+        parse("awa [run command](command:)")
+    end = time.perf_counter()
+    print(f"{i+1:02d}. {(t := end - start):.12f}")
+    s.append(t)
+print(f"--- {min(s):.12f}")
+print(f"--- {sum(s):.12f}")
 
 
 "[run command](command:)"  # run command
