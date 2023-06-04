@@ -1,6 +1,4 @@
-from collections import defaultdict
 from enum import Enum
-import time
 
 MC_COLOR_TOKEN = "\u00a7"  # "§"
 
@@ -34,14 +32,15 @@ class Color(Enum):
 
     def __init__(
         self,
-        code: str,
+        mark: str,
         integer: int | None = None,
         ansi: str | None = None,
     ):
-        self.code = code
-        self.color = -1 if integer is None else integer
+        self.mark = mark
+        self.id = self._name_.lower()
         self.is_format = integer is None
         self.is_color = not self.is_format
+        self.color = -1 if integer is None else integer
 
         self.base_ansi = ansi.split("-") if ansi else []
 
@@ -50,7 +49,7 @@ class Color(Enum):
         return f"\033[{';'.join(self.base_ansi)}m" if self.base_ansi else ""
 
     def __str__(self):
-        return f"{MC_COLOR_TOKEN}{self.code}"
+        return f"{MC_COLOR_TOKEN}{self.mark}"
 
     def __repr__(self):
         return (
@@ -70,49 +69,91 @@ class Color(Enum):
     def colors(cls):
         return [f for f in cls if not f.is_format]
 
+    @classmethod
+    def from_mark(cls, mark: str, default: "Color" = WHITE):
+        return next((f for f in cls if f.mark == mark), default)
+
 
 def parse(text: str):
-    catch, offset = defaultdict[str, list[int]](list), 0
-    while offset < len(text):
-        char = text[offset]
+    catch, offset = dict[str, int](), 0
+    result, catch_data = list[dict | str]([""]), dict[str, dict]()
+    command_catch_text = ""
+
+    text_len = len(text)
+    while offset < text_len:
+        char, next_char = (
+            text[offset],
+            text[offset + 1] if offset < text_len - 1 else None,
+        )
         offset += 1
 
         if char == "\\":
             offset += 1
 
         if char == "[":
-            catch["["].append(offset)
+            catch["["] = offset
         elif char == "]" and catch.get("["):
-            catch["]"].append(offset)
-        elif char == "(" and catch.get("]"):
-            catch["("].append(offset)
-        elif char == ")" and (t4 := catch.pop(")", [None])):
-            catch[")"].append(offset)
-            t1, t2, t3 = catch.get("["), catch.get("]"), catch.get("(")
-            t1, t2, t3 = t1.pop(), t2.pop(), t3.pop()
-            # print(text[t1 : t2 - 1], text[t3 : t4 - 1])
-        # elif char == "*":
-        #     ...
-        # elif char == "_":
-        #     ...
-        # elif char == "~":
-        #     ...
-        # elif char == "|":
-        #     ...
-        # elif char == "#":
-        #     ...
+            catch["]"] = offset
+        elif char == "(" and catch.get("]") == offset - 1:
+            catch["("] = offset
+        elif char == ")" and (t3 := catch.pop("(", None)):
+            t1, t2, t4 = catch.pop("["), catch.pop("]"), offset
+            name, arg = text[t1 : t2 - 1], text[t3 : t4 - 1]
+
+            result.append(catch_data)
+            tmp = dict(catch_data.copy(), text=name, clickEvent={})
+            result.append(tmp)
+            continue
+        elif char == "*":
+            ...
+        elif char == "_":
+            ...
+        elif char == "~" and next_char == "~":
+            offset += 1
+            if old_pos := catch.pop("~~", None):
+                result.append(catch_data)
+
+                catch_data["text"] = text[old_pos : offset - 2]
+                catch_data["strikethrough"] = True
+                continue
+            catch["~~"] = offset
+        elif char == "|":
+            ...
+        elif char == "#":
+            if next_char == "r":
+                result.append(catch_data)
+                catch_data = {}
+                continue
+            catch_data["color"] = Color.from_mark(next_char).id
+            offset += 1
+            continue
+
+        data = catch_data.get("text", "") + char
+        if catch.get("["):
+            command_catch_text = data
+        else:
+            catch_data["text"] = data
+
+    if catch.get("["):
+        catch_data["text"] = command_catch_text
+
+    return result
 
 
-s = []
-for i in range(99):
-    start = time.perf_counter()
-    for _ in range(100000):
-        parse("awa [run command](command:)")
-    end = time.perf_counter()
-    print(f"{i+1:02d}. {(t := end - start):.12f}")
-    s.append(t)
-print(f"--- {min(s):.12f}")
-print(f"--- {sum(s):.12f}")
+# [111](command:say 1)~~test~~
+print(parse("#eawa[111](command:say1)"))
+# import time
+
+# s = []
+# for i in range(99):
+#     start = time.perf_counter()
+#     for _ in range(100000):
+#         parse("awa [run command](command:)")
+#     end = time.perf_counter()
+#     print(f"{i+1:02d}. {(t := end - start):.12f}")
+#     s.append(t)
+# print(f"--- {min(s):.12f}")
+# print(f"--- {sum(s):.12f}")
 
 
 "[run command](command:)"  # run command
