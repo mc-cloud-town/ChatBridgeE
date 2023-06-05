@@ -1,4 +1,5 @@
 from enum import Enum
+import json
 
 MC_COLOR_TOKEN = "\u00a7"  # "§"
 
@@ -74,10 +75,50 @@ class Color(Enum):
         return next((f for f in cls if f.mark == mark), default)
 
 
+def _parse_link(text: str) -> dict:
+    result = {}
+    _offset, args, da = 0, {}, ""
+    while _offset < len(text):
+        if (_char := text[_offset]) == "\\":
+            _offset += 1
+        elif _char == ";":
+            key, value, *_ = (*da.split(":", maxsplit=1), "")
+            args[key] = value
+            da = ""
+        else:
+            da += _char
+        _offset += 1
+    if da:
+        key, value, *_ = (*da.split(":", maxsplit=1), "")
+        args[key] = value
+
+    for k, v in {
+        "command": "run_command",
+        "url": "open_url",
+        "suggest": "suggest_command",
+        "copy": "copy_to_clipboard",
+    }.items():
+        if value := args.get(k):
+            result["clickEvent"] = dict(action=v, value=value)
+            break
+
+    if value := args.get("show_text"):
+        result["hoverEvent"] = dict(action="show_text", value=value)
+
+    return result
+
+
 def parse(text: str):
     catch, offset = dict[str, int](), 0
     result, catch_data = list[dict | str]([""]), dict[str, dict]()
     command_catch_text = ""
+
+    def append(*, reset: bool = False):
+        nonlocal catch_data
+        if catch_data.get("text"):
+            result.append(catch_data)
+        if reset:
+            catch_data = {}
 
     text_len = len(text)
     while offset < text_len:
@@ -100,9 +141,8 @@ def parse(text: str):
             t1, t2, t4 = catch.pop("["), catch.pop("]"), offset
             name, arg = text[t1 : t2 - 1], text[t3 : t4 - 1]
 
-            result.append(catch_data)
-            tmp = dict(catch_data.copy(), text=name, clickEvent={})
-            result.append(tmp)
+            append()
+            result.append(dict(catch_data.copy(), **_parse_link(arg), text=name))
             continue
         elif char == "*":
             ...
@@ -111,8 +151,6 @@ def parse(text: str):
         elif char == "~" and next_char == "~":
             offset += 1
             if old_pos := catch.pop("~~", None):
-                result.append(catch_data)
-
                 catch_data["text"] = text[old_pos : offset - 2]
                 catch_data["strikethrough"] = True
                 continue
@@ -121,10 +159,11 @@ def parse(text: str):
             ...
         elif char == "#":
             if next_char == "r":
-                result.append(catch_data)
-                catch_data = {}
-                continue
-            catch_data["color"] = Color.from_mark(next_char).id
+                append(reset=True)
+            else:
+                if catch_data.get("color"):
+                    append()
+                catch_data = dict(color=Color.from_mark(next_char).id)
             offset += 1
             continue
 
@@ -141,7 +180,7 @@ def parse(text: str):
 
 
 # [111](command:say 1)~~test~~
-print(parse("#eawa[111](command:say1)"))
+print(json.dumps(parse("#eawa#r[~~111~~](command:/say 1;show_text:command)")))
 # import time
 
 # s = []
