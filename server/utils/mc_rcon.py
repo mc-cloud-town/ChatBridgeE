@@ -87,6 +87,7 @@ class RconClientProtocol(Protocol):
         )
 
     def connection_lost(self, exc):
+        self.state = ConnectState.CLOSED
         log.info(f"[{self._transport}] The server closed the connection")
 
     def close(self):
