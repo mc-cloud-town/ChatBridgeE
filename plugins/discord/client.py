@@ -98,7 +98,7 @@ class Bot(commands.Bot):
                 ref_author = ref_msg.author
                 # ┌─<XX> XX
                 await self.server.send(
-                    ["g ┌─<", "r " + (ref_author.nick or ref_author.name), "g > "]
+                    ["g ┌─<", f"r {ref_author.nick or ref_author.name}", "g > "]
                     + self.style_message(ref_msg),
                 )
 
