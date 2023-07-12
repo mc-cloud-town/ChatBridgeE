@@ -24,7 +24,7 @@ class DiscordConfig(Config):
     client_to_query_stats = "Survival"
     online_display_name = "雲鎮工藝"
     online_icon_url = "AUTO"
-    canned_message: dict[str, list[str | str]] = {}
+    canned_message: dict[str, str | list[str]] = {}
 
 
 class Discord(Plugin, config=DiscordConfig):
