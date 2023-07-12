@@ -92,7 +92,7 @@ class Config(ABC):
     @classmethod
     def load_data(cls, path: Path | str, file_type: str) -> dict | None:
         if (path := Path(path)).is_file():
-            with open(path, "r") as f:
+            with open(path, "r", encoding="utf-8") as f:
                 if file_type == "json":
                     return json.load(f)
                 else:

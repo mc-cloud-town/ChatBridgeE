@@ -1,4 +1,5 @@
 import asyncio
+import random
 import time
 from asyncio import AbstractEventLoop
 from datetime import datetime
@@ -92,6 +93,17 @@ class Bot(commands.Bot):
 
         if (author := msg.author) == self.user or author.system:
             return
+
+        canned_message: dict[str, str | list[str]] = self.config.get(
+            "canned_message",
+            {},
+        )
+        if (key := msg.content) in canned_message:
+            await msg.channel.send(
+                random.choice(value)
+                if type(value := canned_message[key]) is list
+                else value
+            )
 
         if msg.channel.id == self.chat_channel:
             if (ref_msg := await self.get_reference_message(msg)) is not None:
