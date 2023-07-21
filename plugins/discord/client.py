@@ -42,6 +42,7 @@ class Bot(commands.Bot):
             extra=dict(markup=True),
         )
         self.add_cog(BotCommand(self))
+        self.load_extension("extra.discord", recursive=True)
 
     @property
     def chat_channel(self) -> int | None:
