@@ -111,12 +111,12 @@ class Bot(commands.Bot):
                 ref_author = ref_msg.author
                 # ┌─<XX> XX
                 await self.server.send(
-                    ["g ┌─<", f"r {ref_author.nick or ref_author.name}", "g > "]
+                    ["g ┌─<", f"r {ref_author.display_name or ref_author.name}", "g > "]
                     + self.style_message(ref_msg),
                 )
 
             content = ["f [", "r Discord", "f ] "]
-            content += ["f <", f"r {author.nick or author.name}", "f > "]
+            content += ["f <", f"r {author.display_name or author.name}", "f > "]
             content += self.style_message(msg)
             content = FormatMessage(*content)
 
