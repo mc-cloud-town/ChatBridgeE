@@ -186,7 +186,16 @@ class Bot(commands.Bot):
             return None
 
 
-class BotCommand(discord.Cog):
+class BaseCog(discord.Cog):
+    def __init__(self, bot: Bot) -> None:
+        self.bot = bot
+        self.log = bot.log
+        self.plugin = bot.plugin
+        self.config = bot.config
+        self.server = bot.server
+
+
+class BotCommand(BaseCog):
     def __init__(self, bot: Bot) -> None:
         self.bot = bot
         self.log = bot.log

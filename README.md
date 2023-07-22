@@ -143,6 +143,13 @@ flowchart LR
 
 當有用戶與伺服器斷開連接時呼叫
 
+## gen
+
+```sh
+pip install mypy
+stubgen -p plugins -p server -o types --include-private
+```
+
 ## 參考
 
 1. [`discord.py cog load method`](https://github.com/Rapptz/discord.py)
