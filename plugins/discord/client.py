@@ -140,6 +140,11 @@ class Bot(commands.Bot):
             ]:
                 if not self.config.get("auto_sync_updata"):
                     await msg.add_reaction("❓")
+                    await msg.reply(
+                        "Are you sure you want to sync files? Please click `❓` "
+                        "[是否確定要同步檔案？請點擊 `❓`]",
+                        mention_author=False,
+                    )
 
                     def check(reaction: Reaction, user: User) -> bool:
                         return (
