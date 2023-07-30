@@ -1,7 +1,7 @@
 from io import BytesIO
 from pathlib import Path
 
-from discord import File, TextChannel
+from discord import File, TextChannel, Webhook
 from discord.errors import LoginFailure
 
 from server import BaseServer, Context, Plugin
@@ -12,6 +12,7 @@ from .client import Bot, fix_msg
 
 class DiscordConfig(Config):
     token: str = "<you discord token here>"
+    webhook: str = "<your webhook here (optional)>"
     prefix: str = "!!"
     sync_enabled: bool = True
     sync_channel: int = 123400000000000000
@@ -73,6 +74,11 @@ class Discord(Plugin, config=DiscordConfig):
         **kwargs,
     ) -> None:
         content = f"[{ctx.display_name}] {content}"
+        if (webhook := str(self.config.get("webhook"))).startswith("http"):
+            ch: Webhook = Webhook.from_url(webhook)
+            await ch.send(content, **kwargs)
+            return
+
         if self.chat_channel is ...:
             self.chat_channel = await self.bot.get_or_fetch_channel(
                 self.config.get("channel_for_chat")
