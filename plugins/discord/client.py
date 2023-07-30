@@ -1,4 +1,5 @@
 import asyncio
+from pathlib import Path
 import random
 import time
 from asyncio import AbstractEventLoop
@@ -42,7 +43,8 @@ class Bot(commands.Bot):
             extra=dict(markup=True),
         )
         self.add_cog(BotCommand(self))
-        self.load_extension("extra.discord", recursive=True)
+        if Path("extra/discord").exists():
+            self.load_extension("extra.discord", recursive=True)
 
     @property
     def chat_channel(self) -> int | None:
