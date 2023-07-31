@@ -15,6 +15,7 @@ class DiscordConfig(Config):
     token: str = "<you discord token here>"
     webhook: str = "<your webhook here (optional)>"
     avatarApi: str = "https://mc-heads.net/avatar/{player}.png"
+    default_avatar: str = ""
     prefix: str = "!!"
     sync_enabled: bool = True
     sync_channel: int = 123400000000000000
@@ -83,12 +84,15 @@ class Discord(Plugin, config=DiscordConfig):
                 text_player_name = (
                     f"{player_name} - " if player_name else ""
                 ) + ctx.display_name
+                avatar_url = (
+                    str(self.config.get("avatarApi")).format(player=player_name)
+                    if player_name
+                    else self.config.get("default_avatar")
+                )
                 await ch.send(
                     content,
                     username=text_player_name,
-                    avatar_url=str(self.config.get("avatarApi")).format(
-                        player=player_name
-                    ),
+                    avatar_url=avatar_url,
                     **kwargs,
                 )
             return
