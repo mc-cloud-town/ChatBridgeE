@@ -81,6 +81,7 @@ class Discord(Plugin, config=DiscordConfig):
 
                 await ch.send(
                     content,
+                    username=ctx.display_name,
                     avatar_url=str(self.config.get("avatarApi")).format(
                         player=ctx.display_name
                     ),
