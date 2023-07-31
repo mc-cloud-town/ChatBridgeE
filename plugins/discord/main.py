@@ -13,6 +13,7 @@ from .client import Bot, fix_msg
 class DiscordConfig(Config):
     token: str = "<you discord token here>"
     webhook: str = "<your webhook here (optional)>"
+    avatarApi: str = "https://mc-heads.net/avatar/{player}.png"
     prefix: str = "!!"
     sync_enabled: bool = True
     sync_channel: int = 123400000000000000
@@ -76,7 +77,13 @@ class Discord(Plugin, config=DiscordConfig):
         content = f"[{ctx.display_name}] {content}"
         if (webhook := str(self.config.get("webhook"))).startswith("http"):
             ch: Webhook = Webhook.from_url(webhook)
-            await ch.send(content, **kwargs)
+            await ch.send(
+                content,
+                avatar_url=str(self.config.get("avatarApi")).format(
+                    player=ctx.display_name
+                ),
+                **kwargs,
+            )
             return
 
         if self.chat_channel is ...:
