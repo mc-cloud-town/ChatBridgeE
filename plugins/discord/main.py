@@ -75,7 +75,6 @@ class Discord(Plugin, config=DiscordConfig):
         channel: TextChannel | None = ...,
         **kwargs,
     ) -> None:
-        content = f"[{ctx.display_name}] {content}"
         if (webhook := str(self.config.get("webhook"))).startswith("http"):
             async with aiohttp.ClientSession() as session:
                 ch: Webhook = Webhook.from_url(webhook, session=session)
@@ -95,7 +94,7 @@ class Discord(Plugin, config=DiscordConfig):
             )
 
         if channel := self.chat_channel if channel is ... else channel:
-            await channel.send(content, **kwargs)
+            await channel.send(f"[{ctx.display_name}] {content}", **kwargs)
 
     @Plugin.listener
     async def on_server_start(self, ctx: Context):

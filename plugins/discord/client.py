@@ -94,7 +94,7 @@ class Bot(commands.Bot):
         ):
             return await self.process_commands(msg)
 
-        if (author := msg.author) == self.user or author.system:
+        if (author := msg.author) == self.user or author.system or author.bot:
             return
 
         canned_message: dict[str, str | list[str]] = self.config.get(
