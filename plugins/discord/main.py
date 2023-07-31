@@ -1,5 +1,6 @@
 from io import BytesIO
 from pathlib import Path
+import aiohttp
 
 from discord import File, TextChannel, Webhook
 from discord.errors import LoginFailure
@@ -76,14 +77,16 @@ class Discord(Plugin, config=DiscordConfig):
     ) -> None:
         content = f"[{ctx.display_name}] {content}"
         if (webhook := str(self.config.get("webhook"))).startswith("http"):
-            ch: Webhook = Webhook.from_url(webhook)
-            await ch.send(
-                content,
-                avatar_url=str(self.config.get("avatarApi")).format(
-                    player=ctx.display_name
-                ),
-                **kwargs,
-            )
+            async with aiohttp.ClientSession() as session:
+                ch: Webhook = Webhook.from_url(webhook, session=session)
+
+                await ch.send(
+                    content,
+                    avatar_url=str(self.config.get("avatarApi")).format(
+                        player=ctx.display_name
+                    ),
+                    **kwargs,
+                )
             return
 
         if self.chat_channel is ...:
