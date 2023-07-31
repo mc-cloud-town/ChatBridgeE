@@ -1,5 +1,6 @@
 import re
 from typing import overload
+from functools import reduce
 
 from server import BaseServer, Context, Plugin
 from server.utils import Config, RconClient
@@ -62,6 +63,21 @@ class Online(Plugin, config=OnlineConfig):
     @overload
     async def query(self, *, order=False) -> dict[Context, set[str]]:  ...  # noqa: E
     # fmt: on
+
+    @Plugin.listener
+    async def on_command_online(self):
+        data = await self.query(order=True)
+        self.log.debug(f"get online players: {data}")
+        print(
+            "List of members [成員列表]"
+            f"({reduce(lambda x, y: x + y, map(lambda x: len(x[1]), data))})"
+        )
+        print(
+            "\n".join(
+                f"- [{k.display_name}]({len(v)}): {', '.join(v)}" for k, v in data
+            )
+            + f"\n\nTotal number of servers [總伺服器數]: {len(data)}"
+        )
 
     async def query(self, *, order: bool = False):
         result: dict[Context, set[str]] = {}
