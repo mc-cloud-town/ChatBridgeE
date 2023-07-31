@@ -87,7 +87,7 @@ class Discord(Plugin, config=DiscordConfig):
                 avatar_url = (
                     str(self.config.get("avatarApi")).format(player=player_name)
                     if player_name
-                    else self.config.get("default_avatar")
+                    else self.config.get("default_avatar") or None
                 )
                 await ch.send(
                     content,
