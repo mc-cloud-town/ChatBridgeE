@@ -73,17 +73,21 @@ class Discord(Plugin, config=DiscordConfig):
         content: str,
         ctx: Context | None = None,
         channel: TextChannel | None = ...,
+        player_name: str = "",
         **kwargs,
     ) -> None:
         if (webhook := str(self.config.get("webhook"))).startswith("http"):
             async with aiohttp.ClientSession() as session:
                 ch: Webhook = Webhook.from_url(webhook, session=session)
 
+                text_player_name = (
+                    f"{player_name} - " if player_name else ""
+                ) + ctx.display_name
                 await ch.send(
                     content,
-                    username=ctx.display_name,
+                    username=text_player_name,
                     avatar_url=str(self.config.get("avatarApi")).format(
-                        player=ctx.display_name
+                        player=player_name
                     ),
                     **kwargs,
                 )
@@ -95,7 +99,12 @@ class Discord(Plugin, config=DiscordConfig):
             )
 
         if channel := self.chat_channel if channel is ... else channel:
-            await channel.send(f"[{ctx.display_name}] {content}", **kwargs)
+            content = (
+                f"[{ctx.display_name}] <{fix_msg(player_name)}> {content}"
+                if player_name
+                else f"[{ctx.display_name}] {content}"
+            )
+            await channel.send(content, **kwargs)
 
     @Plugin.listener
     async def on_server_start(self, ctx: Context):
@@ -111,7 +120,7 @@ class Discord(Plugin, config=DiscordConfig):
 
     @Plugin.listener
     async def on_player_chat(self, ctx: Context, player_name: str, content: str):
-        await self.send(f"<{fix_msg(player_name)}> {content}", ctx=ctx)
+        await self.send(content, ctx=ctx, player_name=player_name)
 
     async def send_join_channel(
         self,
