@@ -2,7 +2,7 @@ from io import BytesIO
 from pathlib import Path
 import aiohttp
 
-from discord import File, TextChannel, Webhook
+from discord import MISSING, File, TextChannel, Webhook
 from discord.errors import LoginFailure
 
 from server import BaseServer, Context, Plugin
@@ -87,7 +87,7 @@ class Discord(Plugin, config=DiscordConfig):
                 avatar_url = (
                     str(self.config.get("avatarApi")).format(player=player_name)
                     if player_name
-                    else self.config.get("default_avatar") or None
+                    else self.config.get("default_avatar") or MISSING
                 )
                 await ch.send(
                     content,
