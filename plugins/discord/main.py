@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 from io import BytesIO
 from pathlib import Path
-import aiohttp
 
+import aiohttp
 from discord import MISSING, File, TextChannel, Webhook
 from discord.errors import LoginFailure
 

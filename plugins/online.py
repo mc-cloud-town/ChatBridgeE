@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import re
-from typing import overload
 from functools import reduce
+from typing import overload
 
 from server import BaseServer, Context, Plugin
 from server.utils import Config, RconClient

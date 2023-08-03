@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import sys
 from asyncio import AbstractEventLoop
 from pathlib import Path

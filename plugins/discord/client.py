@@ -1,10 +1,12 @@
+from __future__ import annotations
+
 import asyncio
-from pathlib import Path
 import random
 import time
 from asyncio import AbstractEventLoop
 from datetime import datetime
 from functools import reduce
+from pathlib import Path
 from typing import Optional
 
 import discord

@@ -2,6 +2,8 @@
 https://developer.valvesoftware.com/wiki/Source_RCON_Protocol
 """
 
+from __future__ import annotations
+
 import asyncio
 import logging
 import struct
