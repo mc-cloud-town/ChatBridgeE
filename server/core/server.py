@@ -285,9 +285,9 @@ class BaseServer(PluginMixin):
         **kwargs: Any,
     ):
         if isinstance(msg, str) and format:
-            msg = FormatMessage(msg, no_mark=no_mark)
+            msg = FormatMessage(msg, no_style=no_mark)
         elif isinstance(msg, (list, tuple)):
-            msg = FormatMessage(*msg, no_mark=no_mark)
+            msg = FormatMessage(*msg, no_style=no_mark)
 
         if server_name:
             msg = FormatMessage(f" {server_name}: ", msg)

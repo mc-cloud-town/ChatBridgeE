@@ -77,6 +77,7 @@ class Bot(commands.Bot):
             contents.append(
                 FormatMessage(
                     content[2:] if content.startswith("\\:") else f" {content}",
+                    no_mark=True,
                 )
             )
         if len(msg.attachments) > 0:

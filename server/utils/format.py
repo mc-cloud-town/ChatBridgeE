@@ -120,12 +120,13 @@ class FormatMessage:
     def __init__(
         self,
         *msgs: Union[str, "FormatMessage"],
+        no_style: bool = False,
         no_mark: bool = False,
     ) -> None:
         self.original_msgs = []
         ansi, mc = "", [""]
         for msg in msgs:
-            if no_mark:
+            if no_style:
                 msg = f" {msg}"
 
             if isinstance(msg, FormatMessage):
