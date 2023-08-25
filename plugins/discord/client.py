@@ -134,6 +134,9 @@ class Bot(commands.Bot):
         if self.config.get("sync_enabled") and msg.channel.id == self.config.get(
             "sync_channel"
         ):
+            sync_file_extensions = tuple(
+                self.config.get("sync_file_extensions").split(",")
+            )
             if files := [
                 FileEncode(
                     path=attachment.filename,
@@ -141,7 +144,7 @@ class Bot(commands.Bot):
                     server_name="Discord",
                 )
                 for attachment in msg.attachments
-                if attachment.filename.endswith(self.config.get("sync_file_extensions"))
+                if attachment.filename.endswith(sync_file_extensions)
             ]:
                 if not self.config.get("auto_sync_updata"):
                     await msg.add_reaction("❓")

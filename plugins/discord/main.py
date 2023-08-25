@@ -22,7 +22,7 @@ class DiscordConfig(Config):
     sync_enabled: bool = True
     sync_channel: int = 123400000000000000
     auto_sync_updata: bool = False
-    sync_file_extensions: list[str] = ".schem"
+    sync_file_extensions: list[str] = ".schem,.schematic"
     channel_for_chat = 123400000000000000
     player_join_channel: int = 123400000000000000
     command_channels: list[int] = [123400000000000000]
