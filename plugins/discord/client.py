@@ -209,13 +209,6 @@ class BaseCog(discord.Cog):
 
 
 class BotCommand(BaseCog):
-    def __init__(self, bot: Bot) -> None:
-        self.bot = bot
-        self.log = bot.log
-        self.plugin = bot.plugin
-        self.config = bot.config
-        self.server = bot.server
-
     @commands.command()
     async def stats(self, ctx: ApplicationContext, *args):
         if not (client_name := self.config.get("client_to_query_stats", None)):
