@@ -89,26 +89,32 @@ class Online(Plugin, config=OnlineConfig):
         )
 
         for name, server in minecraft_GList_match.items():
-            rcon = self._glist_rcon_catch.get(
-                name,
-                RconClient(
-                    host=server.get("address", None),
-                    port=server.get("port", None),
-                    password=server.get("password", None),
-                ),
-            )
-            self._glist_rcon_catch[name] = rcon
-            await rcon.connect()
+            try:
+                rcon = self._glist_rcon_catch.get(
+                    name,
+                    RconClient(
+                        host=server.get("address", None),
+                        port=server.get("port", None),
+                        password=server.get("password", None),
+                    ),
+                )
+                self._glist_rcon_catch[name] = rcon
+                await rcon.connect()
 
-            if (res := await rcon.execute("glist")) and (
-                data := self.handle_bungee(res["data"])
-            ):
-                for id, value in data.items():
-                    result.update({self.server.get_client(id): value})
+                if (res := await rcon.execute("glist")) and (
+                    data := self.handle_bungee(res["data"])
+                ):
+                    for id, value in data.items():
+                        result.update({self.server.get_client(id): value})
+            except Exception as e:
+                self.log.error(f"query {name} error: {e}")
 
         for client in self.server.clients.values():
-            if res := await client.execute_command("list"):
-                result.update({client: self.handle_minecraft(res["data"])})
+            try:
+                if res := await client.execute_command("list"):
+                    result.update({client: self.handle_minecraft(res["data"])})
+            except Exception as e:
+                self.log.error(f"query {client.display_name} error: {e}")
 
         result = {
             k: set(s for s in v if s.strip())
