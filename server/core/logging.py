@@ -1,17 +1,22 @@
 import copy
 import logging
+import os
 import re
+import sys
 from datetime import datetime, timedelta
 from logging import Formatter, Logger, LogRecord
 from logging.handlers import BaseRotatingHandler
 from pathlib import Path
 from typing import Optional, Union
 
+import rich
+from pygments.styles.monokai import MonokaiStyle
 from rich.logging import RichHandler
+from rich.syntax import PygmentsSyntaxTheme
 from rich.text import Text
+from rich.theme import Style, Theme
 
 __all__ = ("init_logging",)
-
 log = logging.getLogger("chat-bridgee")
 StrPath = Union[Path, str]
 
@@ -61,8 +66,8 @@ class LogTimeRotatingFileHandler(BaseRotatingHandler):
             try:
                 record = copy.deepcopy(record)
                 record.msg = Text.from_markup(record.msg)
-            except Exception:
-                pass
+            except Exception as e:  # fix: aiohttp throw errors
+                log.debug(e)
 
         return (self.formatter or Formatter()).format(record)
 
@@ -143,35 +148,71 @@ class LogTimeRotatingFileHandler(BaseRotatingHandler):
         self.stream = self._open()
 
 
-def init_logging(
-    level: int = logging.DEBUG,
-    directory: Optional[StrPath] = None,
-) -> Logger:
+class PackagePathFilter(logging.Filter):
+    def filter(self, record):
+        pathname = record.pathname
+        sys_path = list(sys.path)
+        for i in range(len(sys_path)):
+            sys_path[i] = os.path.abspath(sys_path[i])
+        for path in sys_path:
+            if pathname.startswith(path):
+                relative = os.path.relpath(pathname, path)
+                record.relative = relative
+                break
+        return True
+
+
+def init_logging(level: int, directory: Optional[StrPath] = None) -> Logger:
+    dpy_logger = logging.getLogger("discord")
     warnings_logger = logging.getLogger("py.warnings")
 
     log.setLevel(level)
+    dpy_logger.setLevel(logging.ERROR)
     warnings_logger.setLevel(logging.WARNING)
 
+    shell_formatter = logging.Formatter("{message}", datefmt="[%X]", style="{")
     file_formatter = logging.Formatter(
-        "[{asctime}] [{levelname}:{name}]: {message}",
+        "[{asctime}] [{levelname}:{name}] [{relative}:{lineno}]: {message}",
         datefmt="%Y-%m-%d %H:%M:%S",
         style="{",
     )
+    rich_console = rich.get_console()
+    rich_console.push_theme(
+        Theme(
+            {
+                "log.time": Style(dim=True),
+                "logging.level.warning": Style(color="yellow"),
+                "logging.level.critical": Style(color="white", bgcolor="red"),
+                "logging.level.verbose": Style(color="magenta", italic=True, dim=True),
+                "logging.level.trace": Style(color="white", italic=True, dim=True),
+                "repr.number": Style(color="cyan"),
+                "repr.url": Style(
+                    underline=True,
+                    italic=True,
+                    bold=False,
+                    color="cyan",
+                ),
+            }
+        )
+    )
+    shell_handler = RichHandler(
+        markup=True,
+        console=rich_console,
+        tracebacks_theme=(PygmentsSyntaxTheme(MonokaiStyle)),
+    )
+    shell_handler.setLevel(logging.DEBUG)
+    shell_handler.addFilter(PackagePathFilter())
+    shell_handler.setFormatter(shell_formatter)
 
     file_handler = LogTimeRotatingFileHandler(
         log.name, markup=True, directory=directory
     )
     file_handler.setLevel(logging.DEBUG)
+    file_handler.addFilter(PackagePathFilter())
     file_handler.setFormatter(file_formatter)
 
-    log.addHandler(file_handler)
-    log.addHandler(
-        RichHandler(
-            level=level,
-            rich_tracebacks=True,
-            log_time_format="[%X]",
-            show_path=False,
-        )
-    )
+    root_logger = logging.getLogger()
+    root_logger.addHandler(file_handler)
+    root_logger.addHandler(shell_handler)
 
     return log

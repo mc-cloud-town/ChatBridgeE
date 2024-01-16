@@ -71,6 +71,7 @@ class Plugin(metaclass=PluginMeta):
         self.loop = server.loop
         self.server_config = server.config
         self.log = server.log
+        self.console = server.console
         self.config: Config = {}
 
         if self.__plugin_config__:

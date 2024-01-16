@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import platform
 import random
 import time
 from asyncio import AbstractEventLoop
@@ -13,6 +14,7 @@ import discord
 from discord import (
     ApplicationContext,
     Color,
+    DiscordException,
     Embed,
     Intents,
     Message,
@@ -21,7 +23,13 @@ from discord import (
     User,
 )
 from discord.ext import commands
+from discord.ext.commands import CommandError, CommandNotFound, Context, NotOwner
+import rich
 from rich.text import Text
+from rich.box import MINIMAL
+from rich.table import Table
+from rich.panel import Panel
+from rich.columns import Columns
 
 from server import Plugin
 from server.utils import FileEncode, FormatMessage, format_number
@@ -38,6 +46,7 @@ class Bot(commands.Bot):
 
         self.plugin = plugin
         self.log = plugin.log
+        self.console = rich.get_console()
         self.config = plugin.config
         self.server = plugin.server
         self.log.info(
@@ -61,10 +70,80 @@ class Bot(commands.Bot):
             return None
 
     async def on_ready(self):
-        self.log.info(
-            f"[cyan]discord login {self.user}[/cyan]",
-            extra=dict(markup=True),
+        if self._uptime is not None:
+            return
+
+        self._uptime = datetime.now()
+
+        table_cogs_info = Table(show_edge=False, show_header=False, box=MINIMAL)
+
+        table_cogs_info.add_column(style="blue")
+        table_cogs_info.add_column(style="cyan")
+
+        for cog in self.cogs.values():
+            table_cogs_info.add_row(
+                cog.__cog_name__,
+                f"{docs[:30]}..."
+                if len(docs := cog.__cog_description__) > 20
+                else docs or "-",
+            )
+
+        table_general_info = Table(show_edge=False, show_header=False, box=MINIMAL)
+
+        table_general_info.add_column(style="blue")
+        table_general_info.add_column(style="cyan")
+
+        table_general_info.add_row("Prefixes", self.command_prefix)
+        table_general_info.add_row("python version", platform.python_version())
+        table_general_info.add_row("py-cord version", discord.__version__)
+        table_general_info.add_row("bot version", self.__version__)
+
+        table_counts = Table(show_edge=False, show_header=False, box=MINIMAL)
+
+        table_counts.add_column(style="blue")
+        table_counts.add_column(style="cyan")
+
+        table_counts.add_row("Servers", str(len(self.guilds)))
+        table_counts.add_row(
+            "Unique Users",
+            str(len(self.users)) if self.intents.members else "-",
         )
+        table_counts.add_row("Shards", str(self.shard_count or "-"))
+
+        self.console.print(
+            Columns(
+                [
+                    Panel(table_cogs_info, title=f"[yellow]cogs - {len(self.cogs)}"),
+                    Panel(table_general_info, title=f"[yellow]{self.user} login"),
+                    Panel(table_counts, title="[yellow]counts"),
+                ]
+            ),
+        )
+
+    async def on_command(self, ctx: Context):
+        self.log.info(
+            f"[{ctx.guild.name}] [{ctx.channel.name}] "
+            f"{ctx.author} +msg-command+ -> {ctx.command.name}"
+        )
+
+    async def on_application_command(self, ctx: ApplicationContext):
+        self.log.info(
+            f"[{ctx.guild.name}] [{ctx.channel.name}] "
+            f"{ctx.author} +slash-command+ -> {ctx.command.name}"
+        )
+
+    async def on_command_error(self, ctx: Context, error: CommandError):
+        if isinstance(error, (CommandNotFound, NotOwner)):
+            return
+
+        self.log.exception(type(error).__name__, exc_info=error)
+
+    async def on_application_command_error(
+        self,
+        ctx: ApplicationContext,
+        error: DiscordException,
+    ):
+        self.log.exception(type(error).__name__, exc_info=error)
 
     async def get_reference_message(self, msg: Message) -> Optional[Message]:
         if not msg.reference:
@@ -286,7 +365,7 @@ class BotCommand(BaseCog):
         embed.set_author(
             name=(
                 self.config.get("online_display_name", ctx.guild.name)
-                + "Number of ongo-ins [上線人數]"
+                + "Number of online [上線人數]"
             ),
             icon_url=ctx.guild.icon
             if (url := self.config.get("online_icon_url")) == "AUTO"

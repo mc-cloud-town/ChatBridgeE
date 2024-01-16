@@ -8,6 +8,7 @@ from asyncio import AbstractEventLoop
 from pathlib import Path
 from typing import Any, Callable, Coroutine, List, Optional, TypeVar, Union
 
+import rich
 from aiohttp import web
 from socketio import AsyncServer
 
@@ -43,6 +44,7 @@ class BaseServer(PluginMixin):
         self.app = web.Application(loop=self.loop)
         self.command_manager = CommandManager(self)
         self.log = log
+        self.console = rich.get_console()
         self.config = Config("chatbridgee-config", config_type=config_type)
         self.plugins_dir = self.config.get("plugins_path")
 
