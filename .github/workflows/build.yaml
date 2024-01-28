@@ -19,7 +19,6 @@ jobs:
         working-directory: tmp
         id: vars
         run: |
-          cd tmp
           calculatedSha=$(git rev-parse --short ${{ github.sha }})
           echo "COMMIT_SHORT_SHA=$calculatedSha" >> $GITHUB_ENV
 
