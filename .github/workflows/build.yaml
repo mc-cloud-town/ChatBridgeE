@@ -18,6 +18,7 @@ jobs:
         id: vars
         run: |
           calculatedSha=$(git rev-parse --short ${{ github.sha }})
+          echo $calculatedSha
           echo "COMMIT_SHORT_SHA=$calculatedSha" >> $GITHUB_ENV
 
   generate:
