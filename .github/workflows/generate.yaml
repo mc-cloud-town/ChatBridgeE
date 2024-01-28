@@ -22,17 +22,17 @@ jobs:
 
           cd chatbridgee
           zip -r chatbridgee * || echo "build to zip error"
-          mv chatbridgee.zip chatbridgee.mcdr
-          cp chatbridgee.mcdr ../out
+          mv chatbridgee.zip chatbridgee-${{ inputs.releaseVersion }}.mcdr
+          cp chatbridgee-${{ inputs.releaseVersion }}.mcdr ../out
 
           cd ..
           mkdir -p tmp/server && cp -R server tmp
           cp __main__.py tmp/__main__.py
-          cd tmp && zip -r server.pyz * && cp server.pyz ../out && cd ..
+          cd tmp && zip -r server-${{ inputs.releaseVersion }}.pyz * && cp server-${{ inputs.releaseVersion }}.pyz ../out && cd ..
 
           cd plugins
-          zip -r plugins * || echo "build to zip e rror"
-          cp plugins.zip ../out
+          zip -r plugins-${{ inputs.releaseVersion }} * || echo "build to zip e rror"
+          cp plugins-${{ inputs.releaseVersion }}.zip ../out
 
       - uses: actions/upload-artifact@v3
         with:
