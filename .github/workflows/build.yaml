@@ -22,7 +22,7 @@ jobs:
           calculatedSha=$(git rev-parse --short ${{ github.sha }})
           echo "COMMIT_SHORT_SHA=$calculatedSha" >> $GITHUB_ENV
 
-      - uses: ./.github/workflows/generate.yaml
+      - uses: ../.github/workflows/generate.yaml
         with:
           releaseVersion: dev-${{ steps.vars.outputs.COMMIT_SHORT_SHA }}
 
