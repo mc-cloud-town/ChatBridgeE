@@ -57,7 +57,7 @@ class FileEncode:
     | `0`      | `1`     | flag                   |
     | `1`      | `2`     | path length (n)        |
     | `3`      | `n`     | path                   |
-    | `3+n`    | `2`     | data length (m)        |
+    | `3+n`    | `4`     | data length (m)        |
     | `5+n`    | `m`     | data                   |
     | `5+n+m`  | `2`     | server name length (o) |
     | `7+n+m`  | `o`     | server name            |
@@ -84,8 +84,8 @@ class FileEncode:
             + len(path_bytes := self.path.encode(encoding="utf-8")).to_bytes(2, "big")
             # path (n)
             + path_bytes
-            # [m] data length (2)
-            + len(data_bytes := self.data).to_bytes(2, "big")
+            # [m] data length (4)
+            + len(data_bytes := self.data).to_bytes(4, "big")
             # data (m)
             + data_bytes
         )
@@ -115,7 +115,7 @@ class FileEncode:
         with BytesIO(raw_data) as bio:
             flag = int.from_bytes(bio.read(1), "big")
             path = bio.read(int.from_bytes(bio.read(2), "big")).decode("utf-8")
-            data = bio.read(int.from_bytes(bio.read(2), "big"))
+            data = bio.read(int.from_bytes(bio.read(4), "big"))
             server_name = (
                 None
                 if bio.end

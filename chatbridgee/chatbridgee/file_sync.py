@@ -6,8 +6,8 @@ from .plugin import META, BasePlugin, tr
 from .utils import FileEncode, format_number
 
 
-def display_help(source: CommandSource):
-    source.reply(tr("file_help_message", version=META.version, prefix="!!cbe"))
+def display_help(prefix: str, source: CommandSource):
+    source.reply(tr("file_help_message", version=META.version, prefix=prefix))
 
 
 class FileSyncPlugin(BasePlugin):
@@ -23,7 +23,7 @@ class FileSyncPlugin(BasePlugin):
         )
         self.server.register_command(
             Literal(self.config.file_sync_command_prefix)
-            .runs(display_help)
+            .runs(lambda x: display_help(self.config.file_sync_command_prefix, x))
             .then(
                 Literal("sync")
                 .runs(self.on_command_send)
@@ -105,7 +105,7 @@ class FileSyncPlugin(BasePlugin):
             RText(
                 "A list of files - [檔案列表]: \n"
                 + "\n".join(
-                    f"- {i+1}. {file} ({format_number(size)})"
+                    f"- {i + 1}. {file} ({format_number(size)})"
                     for i, (file, size) in enumerate(files)
                 ),
                 color=RColor.gray,
