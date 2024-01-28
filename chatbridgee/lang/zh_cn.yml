@@ -9,7 +9,7 @@ chatbridgee:
 
   file_help_message: |
     ------MCDR ChatBridgee - file sync 插件 v{version}------
-    一個跨服檔案同步客戶端插件，ChatBridgee 分支插劍
+    一個跨服檔案同步客戶端插件，ChatBridgee 分支插件
     指令前綴: {prefix}
     §7{prefix}§r 顯示幫助信息
     §7{prefix}§r sync <filename>
