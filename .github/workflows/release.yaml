@@ -15,7 +15,7 @@ on:
 
 jobs:
   build:
-    uses: ./.github/workflows/build.yaml
+    uses: ./.github/workflows/generate.yaml
     secrets: inherit
     with:
       releaseVersion: ${{ github.ref_name }}
