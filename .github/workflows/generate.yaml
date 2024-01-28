@@ -31,7 +31,8 @@ jobs:
           cd tmp && zip -r server-${{ inputs.releaseVersion }}.pyz * && cp server-${{ inputs.releaseVersion }}.pyz ../out && cd ..
 
           cd plugins
-          zip -r plugins-${{ inputs.releaseVersion }} * || echo "build to zip e rror"
+          zip -r plugins * || echo "build to zip e rror"
+          mv plugins.zip plugins-${{ inputs.releaseVersion }}.zip
           cp plugins-${{ inputs.releaseVersion }}.zip ../out
 
       - uses: actions/upload-artifact@v3
