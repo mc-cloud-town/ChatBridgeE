@@ -2,12 +2,6 @@ name: release
 
 on:
   workflow_dispatch:
-    inputs:
-      target_subproject:
-        description: leave it empty to build all, use `,` split versions
-        type: string
-        required: false
-        default: ''
 
   # https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#release
   release:
