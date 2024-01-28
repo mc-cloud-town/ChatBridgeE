@@ -29,7 +29,9 @@ jobs:
 
   deploy:
     runs-on: ubuntu-latest
-    needs: generate
+    needs:
+      - generate
+      - short_sha
 
     # allow the mod publish step to add asserts to release
     # https://docs.github.com/en/actions/security-guides/automatic-token-authentication#permissions-for-the-github_token
@@ -42,7 +44,7 @@ jobs:
 
       - uses: actions/download-artifact@v3
         with:
-          name: ChatBridreE-dev-${{ github.sha }}.zip
+          name: ChatBridreE-dev-${{ needs.short_sha.outputs.COMMIT_SHORT_SHA }}.zip
           path: out
 
       - name: upload Release
