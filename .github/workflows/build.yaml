@@ -25,7 +25,7 @@ jobs:
 
       - uses: actions/download-artifact@v3
         with:
-          name: ChatBridreE-dev.zip
+          name: ChatBridreE-dev-${{ github.sha }}.zip
           path: out
 
       - name: upload Release
