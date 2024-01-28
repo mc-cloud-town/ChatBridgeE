@@ -32,8 +32,7 @@ jobs:
 
           cd plugins
           zip -r plugins * || echo "build to zip e rror"
-          mv plugins.zip plugins-${{ inputs.releaseVersion }}.zip
-          cp plugins-${{ inputs.releaseVersion }}.zip ../out
+          mv plugins.zip ../out/plugins-${{ inputs.releaseVersion }}.zip
 
       - uses: actions/upload-artifact@v3
         with:
