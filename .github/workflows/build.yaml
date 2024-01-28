@@ -6,8 +6,10 @@ on:
     branches: [main]
 
 jobs:
-  generate:
+  short_sha:
     runs-on: ubuntu-latest
+    outputs:
+      COMMIT_SHORT_SHA: ${{ steps.vars.outputs.COMMIT_SHORT_SHA }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -18,9 +20,12 @@ jobs:
           calculatedSha=$(git rev-parse --short ${{ github.sha }})
           echo "COMMIT_SHORT_SHA=$calculatedSha" >> $GITHUB_ENV
 
-      - uses: ./../.github/workflows/generate.yaml
-        with:
-          releaseVersion: dev-${{ steps.vars.outputs.COMMIT_SHORT_SHA }}
+  generate:
+    uses: ./.github/workflows/generate.yaml
+    needs: short_sha
+    secrets: inherit
+    with:
+      releaseVersion: dev-${{ needs.short_sha.outputs.COMMIT_SHORT_SHA }}
 
   deploy:
     runs-on: ubuntu-latest
