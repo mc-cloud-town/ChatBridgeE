@@ -36,5 +36,5 @@ jobs:
 
       - uses: actions/upload-artifact@v3
         with:
-          name: ChatBridreE-${{ inputs.releaseVersion }}
+          name: ChatBridreE-${{ inputs.releaseVersion }}.zip
           path: out
