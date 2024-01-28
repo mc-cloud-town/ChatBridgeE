@@ -1,0 +1,40 @@
+name: generate
+on:
+  workflow_dispatch:
+  workflow_call:
+    inputs:
+      releaseVersion:
+        description: 'Release version, ex: div, v0.0.1'
+        type: string
+        required: false
+        default: dev
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Git checkout for Github repository workspace
+        uses: actions/checkout@v4
+
+      - name: build
+        run: |
+          mkdir out
+
+          cd chatbridgee
+          zip -r chatbridgee * || echo "build to zip error"
+          mv chatbridgee.zip chatbridgee.mcdr
+          cp chatbridgee.mcdr ../out
+
+          cd ..
+          mkdir -p tmp/server && cp -R server tmp
+          cp __main__.py tmp/__main__.py
+          cd tmp && zip -r server.pyz * && cp server.pyz ../out && cd ..
+
+          cd plugins
+          zip -r plugins * || echo "build to zip e rror"
+          cp plugins.zip ../out
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: ChatBridreE-${{ inputs.releaseVersion }}
+          path: out

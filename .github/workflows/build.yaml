@@ -6,27 +6,27 @@ on:
     branches: [main]
 
 jobs:
+  generate:
+    uses: ./.github/workflows/generate.yaml
+    secrets: inherit
+
   deploy:
     runs-on: ubuntu-latest
+    needs: generate
+
+    # allow the mod publish step to add asserts to release
+    # https://docs.github.com/en/actions/security-guides/automatic-token-authentication#permissions-for-the-github_token
+    permissions:
+      contents: write
+
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - name: build
-        run: |
-          cd chatbridgee
-
-          zip -r chatbridgee * || echo "build to zip error"
-          mv chatbridgee.zip chatbridgee.mcdr
-          cp chatbridgee.mcdr ..
-
-          cd ..
-          mkdir -p tmp/server && cp -R server tmp
-          cp __main__.py tmp/__main__.py
-          cd tmp && zip -r server.pyz * && cp server.pyz .. && cd ..
-
-          cd plugins
-          zip -r plugins * || echo "build to zip e rror"
-          cp plugins.zip ..
+      - uses: actions/download-artifact@v3
+        with:
+          name: ChatBridreE-dev.zip
+          path: out
 
       - name: upload Release
         uses: ncipollo/release-action@v1
@@ -37,7 +37,7 @@ jobs:
           generateReleaseNotes: true
           token: ${{ secrets.GITHUB_TOKEN }}
           tag: develop
-          artifacts: '*.mcdr,*.pyz,*.zip'
+          artifacts: 'out/*.mcdr,out/*.pyz,out/*.zip'
 
       - name: update ref
         env:
