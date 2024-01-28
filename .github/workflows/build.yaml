@@ -11,18 +11,14 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          # https://github.com/actions/checkout/issues/692
-          path: tmp
 
       - name: Set short git commit SHA
-        working-directory: tmp
         id: vars
         run: |
           calculatedSha=$(git rev-parse --short ${{ github.sha }})
           echo "COMMIT_SHORT_SHA=$calculatedSha" >> $GITHUB_ENV
 
-      - uses: ../.github/workflows/generate.yaml
+      - uses: ./../.github/workflows/generate.yaml
         with:
           releaseVersion: dev-${{ steps.vars.outputs.COMMIT_SHORT_SHA }}
 
