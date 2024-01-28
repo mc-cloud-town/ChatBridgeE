@@ -42,9 +42,9 @@ class FileEncode:
     | `1`      | `2`     | path length (n)        |
     | `3`      | `n`     | path                   |
     | `3+n`    | `4`     | data length (m)        |
-    | `5+n`    | `m`     | data                   |
-    | `5+n+m`  | `2`     | server name length (o) |
-    | `7+n+m`  | `o`     | server name            |
+    | `7+n`    | `m`     | data                   |
+    | `7+n+m`  | `2`     | server name length (o) |
+    | `9+n+m`  | `o`     | server name            |
     """
 
     def __init__(
