@@ -7,8 +7,18 @@ on:
 
 jobs:
   generate:
-    uses: ./.github/workflows/generate.yaml
-    secrets: inherit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set short git commit SHA
+        id: vars
+        run: |
+          calculatedSha=$(git rev-parse --short ${{ github.sha }})
+          echo "COMMIT_SHORT_SHA=$calculatedSha" >> $GITHUB_ENV
+
+      - name: Confirm git commit SHA output
+        uses: ./.github/workflows/generate.yaml
+        with:
+          releaseVersion: dev-${{ steps.vars.outputs.COMMIT_SHORT_SHA }}
 
   deploy:
     runs-on: ubuntu-latest
