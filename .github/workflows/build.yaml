@@ -45,7 +45,7 @@ jobs:
 
       - uses: actions/download-artifact@v3
         with:
-          name: ChatBridreE-dev-${{ needs.short_sha.outputs.COMMIT_SHORT_SHA }}.zip
+          name: ChatBridreE-dev-${{ needs.short_sha.outputs.COMMIT_SHORT_SHA }}
           path: out
 
       - name: upload Release

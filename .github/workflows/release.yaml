@@ -30,7 +30,7 @@ jobs:
       - name: Download build artifacts
         uses: actions/download-artifact@v3
         with:
-          name: ChatBridreE-${{ github.ref_name }}.zip
+          name: ChatBridreE-${{ github.ref_name }}
           path: out
 
       # https://github.com/mikepenz/release-changelog-builder-action
