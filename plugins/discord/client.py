@@ -36,6 +36,8 @@ from server.utils import FileEncode, FormatMessage, format_number
 
 
 class Bot(commands.Bot):
+    __version__ = "1.3.0"
+
     def __init__(self, plugin: Plugin, loop: AbstractEventLoop | None = None):
         super().__init__(
             command_prefix=plugin.config.get("prefix"),
@@ -44,13 +46,12 @@ class Bot(commands.Bot):
             help_command=None,
         )
 
+        self._uptime = None
         self.plugin = plugin
         self.log = plugin.log
         self.console = rich.get_console()
         self.config = plugin.config
         self.server = plugin.server
-        self._uptime = None
-        self.__version__ = "1.3.0"
         self.log.info(
             f"[red]py-cord version: [/red][cyan]{discord.__version__}[/cyan]",
             extra=dict(markup=True),
