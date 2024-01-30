@@ -50,6 +50,7 @@ class Bot(commands.Bot):
         self.config = plugin.config
         self.server = plugin.server
         self._uptime = None
+        self.__version__ = "1.3.0"
         self.log.info(
             f"[red]py-cord version: [/red][cyan]{discord.__version__}[/cyan]",
             extra=dict(markup=True),
