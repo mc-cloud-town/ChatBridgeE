@@ -49,6 +49,7 @@ class Bot(commands.Bot):
         self.console = rich.get_console()
         self.config = plugin.config
         self.server = plugin.server
+        self._uptime = None
         self.log.info(
             f"[red]py-cord version: [/red][cyan]{discord.__version__}[/cyan]",
             extra=dict(markup=True),
