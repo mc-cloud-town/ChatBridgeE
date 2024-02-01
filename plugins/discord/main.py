@@ -32,7 +32,7 @@ class DiscordConfig(Config):
     online_icon_url = "AUTO"
     canned_message: dict[str, str | list[str]] = {}
     black_canned_message_channel: dict[str, list[int]] = {}
-    black_canned_message_parent: dict[str, list[int]] = {}
+    black_canned_message_category: dict[str, list[int]] = {}
 
 
 class Discord(Plugin, config=DiscordConfig):

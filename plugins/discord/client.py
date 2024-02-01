@@ -190,8 +190,9 @@ class Bot(commands.Bot):
             (key := msg.content) in canned_message
             and msg.channel.id
             not in (self.config.get("black_canned_message_channel", {})).get(key, [])
-            and msg.channel.parent_id
-            not in (self.config.get("black_canned_message_parent", {})).get(key, [])
+            and msg.channel.category_id
+            and msg.channel.category_id
+            not in (self.config.get("black_canned_message_category", {})).get(key, [])
         ):
             await msg.channel.send(
                 random.choice(value)
