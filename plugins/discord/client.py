@@ -186,7 +186,13 @@ class Bot(commands.Bot):
             "canned_message",
             {},
         )
-        if (key := msg.content) in canned_message:
+        if (
+            (key := msg.content) in canned_message
+            and msg.channel.id
+            not in (self.config.get("black_canned_message_channel", {})).get(key, [])
+            and msg.channel.parent_id
+            not in (self.config.get("black_canned_message_parent", {})).get(key, [])
+        ):
             await msg.channel.send(
                 random.choice(value)
                 if type(value := canned_message[key]) is list
