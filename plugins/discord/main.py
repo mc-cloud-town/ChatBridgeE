@@ -176,7 +176,7 @@ class Discord(Plugin, config=DiscordConfig):
             )
 
         await self.send(
-            f"A file published from {server_name} - 從 {server_name} 發佈的檔案",
+            f"A file published from {server_name} - 從 {server_name} 發布的檔案",
             ctx=ctx,
             file=File(BytesIO(data.data), Path(file_path).name),
             channel=self.sync_channel,
