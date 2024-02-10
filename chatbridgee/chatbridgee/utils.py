@@ -4,14 +4,14 @@ from io import BytesIO as IoBytesIO
 from pathlib import Path
 
 __all__ = (
-    "format_number",
+    "format_size_number",
     "BytesIO",
     "FileEncode",
 )
 
 
-def format_number(number: int) -> str:
-    suffixes = " KMGTP"
+def format_size_number(number: int) -> str:
+    suffixes = "BKMGTP"
     suffix_index = 0
 
     while number >= 1000 and suffix_index < len(suffixes) - 1:
@@ -86,10 +86,7 @@ class FileEncode:
         return data
 
     def __str__(self) -> str:
-        return (
-            f"<FileEncode path={self.path} flag={self.flag} "
-            f"server_name={self.server_name}>"
-        )
+        return f"<FileEncode path={self.path} flag={self.flag} " f"server_name={self.server_name}>"
 
     __repr__ = __str__
 
@@ -100,10 +97,6 @@ class FileEncode:
             flag = int.from_bytes(bio.read(1), "big")
             path = bio.read(int.from_bytes(bio.read(2), "big")).decode("utf-8")
             data = bio.read(int.from_bytes(bio.read(4), "big"))
-            server_name = (
-                None
-                if bio.end
-                else bio.read(int.from_bytes(bio.read(2), "big")).decode("utf-8")
-            )
+            server_name = None if bio.end else bio.read(int.from_bytes(bio.read(2), "big")).decode("utf-8")
 
             return cls(path, data, flag=flag, server_name=server_name)

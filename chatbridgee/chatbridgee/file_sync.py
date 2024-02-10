@@ -1,9 +1,12 @@
 from pathlib import Path
+from typing import NamedTuple
 
-from mcdreforged.api.all import CommandSource, GreedyText, Literal, RColor, RText
+from mcdreforged.api.all import CommandSource, GreedyText, Literal, RColor, RText, RTextList, RAction
 
 from .plugin import META, BasePlugin, tr
-from .utils import FileEncode, format_number
+from .utils import FileEncode, format_size_number
+
+PER_PAGE_SIZE = 10
 
 
 def display_help(prefix: str, source: CommandSource):
@@ -32,7 +35,7 @@ class FileSyncPlugin(BasePlugin):
             .then(
                 Literal("list")
                 .runs(self.on_command_list)
-                .then(GreedyText("match").runs(self.on_command_list))
+                .then(GreedyText("index").runs(self.on_command_list))
             )
         )
 
@@ -71,43 +74,105 @@ class FileSyncPlugin(BasePlugin):
 
         source.reply("檔案傳送完成")
 
+    class FileInfo(NamedTuple):
+        name: str
+        size: int
+
+        @classmethod
+        def from_path(cls, path: Path, file_sync_extension: str) -> "FileSyncPlugin.FileInfo":
+            return cls(
+                path.relative_to(path.parent).as_posix().removesuffix(file_sync_extension),
+                path.stat().st_size,
+            )
+
+    def get_dir_files(self, path: Path) -> list[FileInfo]:
+        return [
+            self.FileInfo.from_path(file_path, self.config.file_sync_extension)
+            for file_path in path.rglob(f"*{self.config.file_sync_extension}")
+        ]
+
     def on_command_list(self, source: CommandSource = None, ctx: dict = {}) -> None:
         config = self.config
-        path, match = Path(config.file_sync_path), ctx.get("match", "")
+        path, index = Path(config.file_sync_path), ctx.get("index", 1)
         if not path.is_dir():
-            source.reply(
-                RText(
-                    "The archive directory was not found - [檔案目錄未找到]",
-                    color=RColor.red,
-                )
+            err_msg = RText(
+                "The archive directory was not found - [檔案目錄未找到]",
+                color=RColor.red,
             )
+            source.reply(err_msg)
             return
 
-        files = set(
-            (
-                f.relative_to(path).as_posix().removesuffix(config.file_sync_extension),
-                f.stat().st_size,
+        try:
+            index = int(index)
+            if index < 1:
+                raise ValueError
+        except ValueError:
+            err_msg = RText(
+                "The index must be an integer - [索引必須為正整數]",
+                color=RColor.red,
             )
-            for f in path.rglob(f"*{config.file_sync_extension}")
-            if f.name.startswith(match)
-        )
+            source.reply(err_msg)
+            return
 
+        files = self.get_dir_files(path)
         if not files:
-            source.reply(
-                RText(
-                    "There is no such archive in the archive catalog - [檔案目錄中沒有這樣的檔案]",
-                    color=RColor.red,
-                )
+            err_msg = RText(
+                "There is no such archive in the archive catalog - [檔案目錄中沒有這樣的檔案]",
+                color=RColor.red,
             )
+            source.reply(err_msg)
             return
 
-        source.reply(
-            RText(
-                "A list of files - [檔案列表]: \n"
-                + "\n".join(
-                    f"- {i + 1}. {file} ({format_number(size)})"
-                    for i, (file, size) in enumerate(files)
-                ),
-                color=RColor.gray,
+        files_len = len(files)
+        start = (index - 1) * PER_PAGE_SIZE
+        if files_len < start:
+            err_msg = RText(
+                "The index is out of range - [索引超出範圍]",
+                color=RColor.red,
             )
-        )
+            source.reply(err_msg)
+            return
+        end = start + PER_PAGE_SIZE
+
+        text = RTextList(RText("A list of files - [檔案列表]: \n", color=RColor.gray))
+        for i, (file_name, size) in enumerate(files[start:end]):
+            component1 = RTextList(RText("- ", color=RColor.gray))
+            component1.append(RText(f"[{start+i+1:02d}] ", color=RColor.gold))
+            component1.append(RText(f"{file_name}\n", color=RColor.green))
+            component1.c(
+                RAction.suggest_command,
+                f"{self.config.file_sync_command_prefix} sync {file_name}",
+            )
+            component1.h(RText(f"點擊傳送檔案 ({format_size_number(size)})", color=RColor.gold))
+            text.append(component1)
+
+        max_page = (files_len - 1) // PER_PAGE_SIZE + 1
+        component2 = RTextList(RText("----", color=RColor.yellow))
+        if index > 1:
+            component3 = RTextList(RText(" <<<", color=RColor.gold))
+            component3.c(
+                RAction.run_command,
+                f"{self.config.file_sync_command_prefix} list {index - 1}",
+            )
+            component3.h(RText("上一頁", color=RColor.gold))
+            component2.append(component3)
+        else:
+            component2.append(RText("---", color=RColor.yellow))
+
+        component2.append(RText(f" {index:02d}/{index:02d}/{max_page:02d} ", color=RColor.gold))
+
+        if index < max_page:
+            component3 = RTextList(RText(">>> ", color=RColor.gold))
+            component3.c(
+                RAction.run_command,
+                f"{self.config.file_sync_command_prefix} list {index + 1}",
+            )
+            component3.h(RText("下一頁", color=RColor.gold))
+            component2.append(component3)
+        else:
+            component2.append(RText("---", color=RColor.yellow))
+
+        component2.append(RText("----", color=RColor.yellow))
+        text.append(component2)
+
+        source.reply(text)
