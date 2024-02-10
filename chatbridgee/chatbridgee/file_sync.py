@@ -65,12 +65,15 @@ class FileSyncPlugin(BasePlugin):
             source.reply(RText(tr("no_args").format(arg="filename"), color=RColor.red))
             return
 
-        path = Path(config.file_sync_path) / f"{filename}{config.file_sync_extension}"
+        if not filename.endswith(config.file_sync_extension):
+            filename += config.file_sync_extension
+
+        path = Path(config.file_sync_path) / filename
         if not path.is_file():
             source.reply(RText("檔案未找到", color=RColor.red))
             return
 
-        self.sio.emit("file_sync", FileEncode(path, path.read_bytes()).encode())
+        self.sio.emit("file_sync", FileEncode(filename, path.read_bytes()).encode())
 
         source.reply("檔案傳送完成")
 
