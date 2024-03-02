@@ -30,6 +30,7 @@ class ConfigType(NamedTuple):
     }  # dict[name, UserAuth]
     plugins_path: str = "plugins"
     port: str = 8081
+    host: str = "localhost"
 
 
 class Config(Generic[_RT]):

@@ -219,7 +219,7 @@ class BaseServer(PluginMixin):
         runner = web.AppRunner(self.app)
         await runner.setup()
         port = int(self.config.get("port", os.getenv("PORT")))
-        site = web.TCPSite(runner, "localhost", port)
+        site = web.TCPSite(runner, self.config.get("host", os.getenv("HOST")), port)
         await site.start()
 
         print(f"======= Serving on http://localhost:{port}/ ======")
